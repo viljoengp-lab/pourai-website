@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bar-Back — Bottle Scanner</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: #070503; min-height:100vh;
+  display:flex; flex-direction:column; align-items:center;
+  justify-content:flex-start; padding:20px 16px 40px;
+  font-family:'DM Sans',sans-serif; color:#F5ECD7;
+}
+
+/* HEADER */
+.app-header {
+  width:100%; max-width:520px;
+  background:#C17F24; border-radius:14px 14px 0 0;
+  padding:16px 20px; display:flex; align-items:center; gap:12px;
+}
+.app-icon { width:38px; height:38px; border-radius:50%; background:#0a0807; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.app-name { font-size:15px; font-weight:500; color:#0a0807; }
+.app-sub { font-size:10px; color:rgba(10,8,7,0.6); margin-top:2px; }
+
+/* MAIN CARD */
+.card {
+  width:100%; max-width:520px;
+  background:#0f0c09;
+  border:1px solid rgba(193,127,36,0.3);
+  border-top:none; border-radius:0 0 14px 14px;
+  padding:22px 20px 28px;
+}
+
+/* UPLOAD ZONE */
+.upload-zone {
+  border:1.5px dashed rgba(193,127,36,0.4);
+  border-radius:12px; padding:36px 20px;
+  text-align:center; cursor:pointer;
+  background:rgba(193,127,36,0.04);
+  position:relative; transition:all 0.2s;
+}
+.upload-zone:hover, .upload-zone.drag { border-color:#C17F24; background:rgba(193,127,36,0.08); }
+.upload-zone input { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+.uz-icon { font-size:42px; margin-bottom:12px; }
+.uz-title { font-size:15px; font-weight:500; color:#F5ECD7; margin-bottom:5px; }
+.uz-sub { font-size:12px; color:#6A5A3A; line-height:1.5; }
+
+.eg-row { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-top:16px; }
+.eg-pill { font-size:10.5px; padding:4px 12px; border:1px solid rgba(193,127,36,0.2); border-radius:20px; color:rgba(193,127,36,0.55); }
+
+/* PREVIEW */
+.preview-box { position:relative; margin-bottom:16px; }
+.preview-img { width:100%; max-height:300px; object-fit:contain; border-radius:10px; border:1px solid rgba(193,127,36,0.25); background:#080503; display:block; }
+.btn-remove {
+  position:absolute; top:10px; right:10px;
+  width:30px; height:30px; border-radius:50%;
+  background:rgba(0,0,0,0.7); border:1px solid rgba(255,255,255,0.15);
+  color:rgba(255,255,255,0.8); font-size:14px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+}
+
+/* BUTTONS */
+.btn-scan {
+  width:100%; padding:14px; background:#C17F24; border:none;
+  border-radius:8px; color:#0a0807; font-size:12px; font-weight:500;
+  letter-spacing:2px; text-transform:uppercase; cursor:pointer;
+  font-family:'DM Sans',sans-serif; transition:background 0.2s;
+}
+.btn-scan:hover { background:#e8a830; }
+.btn-scan:disabled { background:rgba(193,127,36,0.25); color:rgba(193,127,36,0.4); cursor:not-allowed; }
+
+/* LOADING */
+.loading-box { text-align:center; padding:36px 0; }
+.dots { display:flex; gap:7px; justify-content:center; margin-bottom:14px; }
+.dot { width:9px; height:9px; border-radius:50%; background:#C17F24; animation:dotpulse 1.2s ease-in-out infinite; }
+.dot:nth-child(2) { animation-delay:0.2s; }
+.dot:nth-child(3) { animation-delay:0.4s; }
+@keyframes dotpulse { 0%,80%,100%{transform:scale(0.5);opacity:0.3} 40%{transform:scale(1.2);opacity:1} }
+.loading-msg { font-size:13px; color:#6A5A3A; }
+
+/* RESULT */
+.result-box { margin-top:0; }
+.result-label {
+  font-size:9.5px; letter-spacing:2.5px; text-transform:uppercase;
+  color:#C17F24; margin-bottom:14px; display:flex; align-items:center; gap:8px;
+}
+.result-label::before { content:''; width:28px; height:1.5px; background:#C17F24; display:inline-block; }
+.result-content {
+  background:rgba(193,127,36,0.06); border:1px solid rgba(193,127,36,0.2);
+  border-radius:10px; padding:18px 20px;
+  font-size:13px; line-height:1.8; color:#9A8A6A;
+  white-space:pre-wrap;
+}
+.result-content b { color:#F5ECD7; font-weight:500; }
+.result-content .gold { color:#C17F24; }
+.btn-reset {
+  background:none; border:1px solid rgba(193,127,36,0.3);
+  border-radius:8px; color:rgba(193,127,36,0.6);
+  padding:10px 20px; font-size:12px; cursor:pointer;
+  font-family:'DM Sans',sans-serif; margin-top:14px;
+  transition:all 0.2s; letter-spacing:1px;
+}
+.btn-reset:hover { border-color:#C17F24; color:#C17F24; }
+
+/* SECTION TOGGLE */
+.section { display:none; }
+.section.active { display:block; }
+
+/* DIVIDER */
+.divider { width:40px; height:2px; background:#C17F24; margin:0 0 14px; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-icon">📸</div>
+  <div>
+    <div class="app-name">Bar-Back — Bottle Scanner</div>
+    <div class="app-sub">Photograph any product for instant professional information</div>
+  </div>
+</div>
+
+<div class="card">
+
+  <!-- UPLOAD SECTION -->
+  <div class="section active" id="sec-upload">
+    <div class="divider"></div>
+    <p style="font-size:13px;color:#6A5A3A;line-height:1.7;margin-bottom:18px;">
+      Point your camera at any bottle, label or product. Bar-Back will identify it and give you everything you need — tasting notes, serving suggestions, cocktail recipes and Dubai hospitality context.
+    </p>
+    <div class="upload-zone" id="dropZone">
+      <input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)">
+      <div class="uz-icon">🍾</div>
+      <div class="uz-title">Tap to upload a photo</div>
+      <div class="uz-sub">Or drag and drop an image here<br>Works with any spirit, wine, beer or liqueur</div>
+    </div>
+    <div class="eg-row">
+      <span class="eg-pill">🥃 Whisky</span>
+      <span class="eg-pill">🍷 Wine labels</span>
+      <span class="eg-pill">🍸 Spirits</span>
+      <span class="eg-pill">🍾 Champagne</span>
+      <span class="eg-pill">🍺 Beer & Cider</span>
+      <span class="eg-pill">🚬 Cigars</span>
+      <span class="eg-pill">💨 Shisha tobacco</span>
+      <span class="eg-pill">🍹 Bar tools</span>
+      <span class="eg-pill">🥂 Glassware</span>
+      <span class="eg-pill">🥂 Liqueurs</span>
+    </div>
+  </div>
+
+  <!-- PREVIEW SECTION -->
+  <div class="section" id="sec-preview">
+    <div class="preview-box">
+      <img id="previewImg" class="preview-img" alt="Uploaded product">
+      <button class="btn-remove" onclick="reset()" title="Remove">✕</button>
+    </div>
+    <button class="btn-scan" id="scanBtn" onclick="scan()">
+      🔍 &nbsp; Identify This Product
+    </button>
+  </div>
+
+  <!-- LOADING SECTION -->
+  <div class="section" id="sec-loading">
+    <div class="loading-box">
+      <div class="dots">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+      <div class="loading-msg" id="loadMsg">Analysing the bottle...</div>
+    </div>
+  </div>
+
+  <!-- RESULT SECTION -->
+  <div class="section" id="sec-result">
+    <div class="preview-box" style="margin-bottom:18px;">
+      <img id="resultImg" class="preview-img" alt="Identified product">
+    </div>
+    <div class="result-box">
+      <div class="result-label">Bar-Back Analysis</div>
+      <div class="result-content" id="resultContent"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
+      <button class="btn-reset" onclick="reset()">← Scan Another Bottle</button>
+      <button class="btn-reset" onclick="copyResult()" id="copyBtn">⎘ Copy Information</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SYSTEM = `You are Bar-Back, an expert AI assistant for bartenders, sommeliers and hospitality professionals in Dubai's luxury venues. When shown an image of ANY product or equipment — spirits, wine, beer, cider, Champagne, liqueur, cigar, shisha tobacco, bar tools, glassware or any other beverage-related item — identify it precisely and provide comprehensive professional information.
+
+Detect the product or equipment category from the image and use the appropriate response format below. Use **bold** for all section headings.
+
+FOR SPIRITS, WINE, BEER, CIDER, CHAMPAGNE, LIQUEUR:
+**[FULL PRODUCT NAME]**
+Brand · Expression · Vintage or Age Statement if applicable
+**Category:** **Origin:** **ABV:** **Price Tier:**
+**Brand Story:** 2-3 sentences on brand history and significance.
+**Tasting Notes:** Nose / Palate / Finish
+**Serving Suggestion:** Glass, temperature, garnish, recommended serves.
+**Cocktail Recommendations:** 2-3 cocktails with ml recipes.
+**Food Pairing:** Best matches for Dubai venue context.
+**Dubai Hospitality Notes:** Guest profiles, upsell opportunities, conversation starters.
+
+FOR WINE — ALSO INCLUDE:
+**Grape Variety:** **Appellation:** **Vintage:** **Ageing:** **Service Temperature:** **Decanting:**
+
+FOR BEER AND CIDER — ALSO INCLUDE:
+**Style:** (IPA, Stout, Dry Cider etc) **Brewery:** **Best Served:** (temperature and glass)
+
+FOR CIGARS:
+**[FULL CIGAR NAME]** — Brand · Line · Vitola
+**Origin:** **Wrapper:** **Body:** (Light/Medium/Full) **Smoking Time:** **Price Tier:**
+**Brand Story:** 2-3 sentences on brand prestige and history.
+**Flavour Profile:** Pre-light aroma / First third / Second third / Final third
+**Recommended Pairings:** Whisky / Cognac / Rum / Other spirits — each with specific recommendation and reason.
+**Cutting and Lighting:** Best cut type and lighting method for this vitola.
+**Dubai Hospitality Notes:** Guest profile, upsell opportunities, service conversation starters.
+
+FOR SHISHA TOBACCO:
+**[FULL PRODUCT NAME]** — Brand · Flavour · Size
+**Brand:** **Type:** (Tobacco moassel / Herbal / Steam stones) **Nicotine Level:** **Smoke Volume:**
+**Flavour Profile:** Primary notes / Secondary notes / Sweetness / Coolness
+**Best Paired With:** Beverage pairings that complement this flavour.
+**Recommended For:** Guest types and occasions this flavour suits.
+**Dubai Hospitality Notes:** UAE market popularity, upsell opportunities, service notes.
+
+FOR BAR TOOLS AND EQUIPMENT:
+**[TOOL/EQUIPMENT NAME]**
+**Category:** (Shaker / Strainer / Jigger / Glassware / Ice Tool / Garnish Tool / Other)
+**What it is:** Clear description of the tool and what it is made from.
+**Primary Use:** What it is specifically used for in a professional bar setting.
+**How to Use Correctly:** Step-by-step professional technique for using this tool correctly.
+**Pro Tips:** 2-3 professional tips for getting the best results from this tool.
+**Common Mistakes:** What bartenders commonly do wrong with this tool and how to avoid it.
+**Maintenance and Care:** How to clean, maintain and store this tool properly.
+**Variants:** Different versions or types of this tool available (e.g. Boston vs Cobbler shaker).
+**Recommended Brands:** Professional-grade brands worth investing in for this tool.
+
+FOR GLASSWARE SPECIFICALLY — ALSO INCLUDE:
+**Capacity:** Volume in ml.
+**Cocktails Served In This Glass:** List of 5-6 cocktails traditionally served in this glass type.
+**Polishing Technique:** How to correctly polish this glass type for service.
+**Handling:** Correct way to hold and present this glass.
+
+If you cannot clearly identify the specific item describe exactly what you can see and provide the most relevant professional information you can. Always be helpful, confident and professional.`;
+
+let b64 = null;
+let mime = null;
+const msgs = ["Analysing the bottle...","Reading the label...","Checking the knowledge base...","Preparing tasting notes...","Almost there..."];
+let msgTimer;
+
+function show(id) {
+  ['upload','preview','loading','result'].forEach(s => {
+    document.getElementById('sec-'+s).classList.remove('active');
+  });
+  document.getElementById('sec-'+id).classList.add('active');
+}
+
+function handleFile(e) {
+  const f = e.target.files[0];
+  if (f) processFile(f);
+}
+
+function processFile(f) {
+  if (!f.type.startsWith('image/')) return;
+  mime = f.type;
+  const r = new FileReader();
+  r.onload = (e) => {
+    b64 = e.target.result.split(',')[1];
+    document.getElementById('previewImg').src = e.target.result;
+    show('preview');
+  };
+  r.readAsDataURL(f);
+}
+
+// Drag and drop
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag');
+  if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
+});
+
+async function scan() {
+  if (!b64) return;
+  document.getElementById('resultImg').src = document.getElementById('previewImg').src;
+  show('loading');
+  let i = 0;
+  msgTimer = setInterval(() => {
+    document.getElementById('loadMsg').textContent = msgs[++i % msgs.length];
+  }, 1800);
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: SYSTEM,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: mime, data: b64 } },
+            { type: 'text', text: 'Please identify this product and provide complete professional information for a Dubai hospitality venue bartender.' }
+          ]
+        }]
+      })
+    });
+    clearInterval(msgTimer);
+    const data = await res.json();
+    const text = data.content?.map(b => b.text||'').join('') || 'Unable to identify the product clearly. Please try a sharper, better-lit photo showing the label.';
+    document.getElementById('resultContent').innerHTML = text
+      .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+      .replace(/\n/g, '<br>');
+    show('result');
+  } catch(err) {
+    clearInterval(msgTimer);
+    document.getElementById('resultContent').innerHTML = '<b>Connection error</b><br>Please try again.';
+    show('result');
+  }
+}
+
+function reset() {
+  clearInterval(msgTimer);
+  b64 = null; mime = null;
+  document.getElementById('fileInput').value = '';
+  document.getElementById('copyBtn').textContent = '⎘ Copy Information';
+  show('upload');
+}
+
+function copyResult() {
+  const text = document.getElementById('resultContent').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    document.getElementById('copyBtn').textContent = '✓ Copied!';
+    setTimeout(() => { document.getElementById('copyBtn').textContent = '⎘ Copy Information'; }, 2000);
+  });
+}
+</script>
+
+</body>
+</html>
