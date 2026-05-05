@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bar-Back — Cocktail Cost Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #C17F24;
+  --gold-light: #E8A830;
+  --gold-dim: rgba(193,127,36,0.25);
+  --dark: #070503;
+  --dark-2: #0f0c09;
+  --dark-3: #161208;
+  --dark-4: #1e1810;
+  --cream: #F5ECD7;
+  --muted: #9A8A6A;
+  --faint: #6A5A3A;
+  --dim: #3A2A18;
+  --border: rgba(193,127,36,0.22);
+  --border-strong: rgba(193,127,36,0.45);
+  --green: #4a9b7f;
+  --red: #c05050;
+  --amber: #e87020;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--dark); min-height:100vh;
+  font-family: 'DM Sans', sans-serif; color: var(--cream);
+  display: flex; flex-direction: column; align-items: center;
+  padding: 20px 16px 60px;
+}
+
+/* ── HEADER ── */
+.app-header {
+  width:100%; max-width:680px;
+  background: var(--gold); border-radius:14px 14px 0 0;
+  padding:16px 22px; display:flex; align-items:center; gap:12px;
+}
+.app-icon { width:38px; height:38px; border-radius:50%; background:#0a0807; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.app-name { font-size:15px; font-weight:500; color:#0a0807; }
+.app-sub { font-size:10px; color:rgba(10,8,7,0.6); margin-top:2px; }
+
+/* ── CARD ── */
+.card {
+  width:100%; max-width:680px;
+  background: var(--dark-2); border:1px solid var(--border);
+  border-top:none; border-radius:0 0 14px 14px; padding:24px 22px 32px;
+}
+
+/* ── DIVIDER / SECTION TITLE ── */
+.gold-rule { width:40px; height:2px; background:var(--gold); margin:0 0 14px; }
+.section-label {
+  font-size:10px; letter-spacing:2.5px; text-transform:uppercase;
+  color:var(--faint); margin-bottom:12px; display:block;
+}
+
+/* ── PRESETS ── */
+.presets { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:22px; }
+.preset {
+  padding:6px 14px; border:1px solid var(--border);
+  border-radius:20px; background:transparent; color:var(--faint);
+  font-size:11px; cursor:pointer; font-family:'DM Sans',sans-serif;
+  transition:all 0.2s;
+}
+.preset:hover { border-color:var(--gold); color:var(--gold); background:rgba(193,127,36,0.05); }
+
+/* ── COCKTAIL NAME ── */
+.name-wrap { margin-bottom:20px; }
+.field-label { font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--faint); display:block; margin-bottom:6px; }
+.name-input {
+  width:100%; padding:11px 14px;
+  background:rgba(193,127,36,0.05); border:1px solid var(--border);
+  border-radius:8px; color:var(--cream); font-size:14px;
+  font-family:'DM Sans',sans-serif; outline:none; transition:border-color 0.2s;
+}
+.name-input:focus { border-color:var(--gold); }
+.name-input::placeholder { color:var(--dim); }
+
+/* ── INGREDIENTS TABLE ── */
+.table-wrap { overflow-x:auto; margin-bottom:12px; -webkit-overflow-scrolling:touch; }
+table { width:100%; border-collapse:collapse; min-width:560px; }
+thead th {
+  font-size:9.5px; letter-spacing:2px; text-transform:uppercase;
+  color:var(--faint); padding:0 10px 10px; text-align:left; font-weight:400;
+}
+thead th.right { text-align:right; }
+thead th.center { text-align:center; }
+
+.ing-row td { padding:5px 10px; vertical-align:middle; }
+.ing-row td.right { text-align:right; }
+.ing-row td.center { text-align:center; }
+
+.cell-input {
+  width:100%; padding:9px 12px;
+  background:rgba(255,255,255,0.04); border:1px solid var(--border);
+  border-radius:6px; color:var(--cream); font-size:13px;
+  font-family:'DM Sans',sans-serif; outline:none; transition:border-color 0.2s;
+}
+.cell-input:focus { border-color:rgba(193,127,36,0.5); }
+.cell-input::placeholder { color:var(--dim); }
+.cell-input.num { text-align:center; }
+.cell-input.money { text-align:right; }
+
+.row-cost {
+  font-size:12px; color:var(--muted); text-align:right;
+  padding-right:10px; min-width:70px;
+}
+
+.btn-del {
+  width:28px; height:28px; border-radius:50%;
+  border:1px solid var(--border); background:transparent;
+  color:var(--faint); cursor:pointer; font-size:14px;
+  display:flex; align-items:center; justify-content:center;
+  transition:all 0.2s; flex-shrink:0;
+}
+.btn-del:hover { border-color:#c05050; color:#c05050; background:rgba(192,80,80,0.08); }
+
+/* ── ADD ROW ── */
+.btn-add {
+  width:100%; padding:10px; background:transparent;
+  border:1px dashed var(--gold-dim); border-radius:8px;
+  color:rgba(193,127,36,0.55); font-size:11px; letter-spacing:1.5px;
+  text-transform:uppercase; cursor:pointer; font-family:'DM Sans',sans-serif;
+  transition:all 0.2s; margin-bottom:20px;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.btn-add:hover { border-color:var(--gold); color:var(--gold); background:rgba(193,127,36,0.04); }
+
+/* ── SETTINGS ROW ── */
+.settings-grid {
+  display:grid; grid-template-columns:1fr 1fr 1fr;
+  gap:12px; margin-bottom:20px;
+}
+.setting-item { display:flex; flex-direction:column; gap:6px; }
+.setting-input {
+  padding:9px 12px; background:rgba(193,127,36,0.05);
+  border:1px solid var(--border); border-radius:8px;
+  color:var(--cream); font-size:13px; font-family:'DM Sans',sans-serif;
+  outline:none; text-align:center; transition:border-color 0.2s;
+}
+.setting-input:focus { border-color:var(--gold); }
+
+/* ── CURRENCY TOGGLE ── */
+.currency-row { display:flex; gap:6px; margin-bottom:20px; flex-wrap:wrap; }
+.currency-btn {
+  padding:6px 16px; border:1px solid var(--border); border-radius:20px;
+  background:transparent; color:var(--faint); font-size:11px;
+  cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.2s;
+}
+.currency-btn.active { background:rgba(193,127,36,0.12); border-color:var(--gold); color:var(--gold); }
+
+/* ── CALCULATE BUTTON ── */
+.btn-calc {
+  width:100%; padding:14px; background:var(--gold); border:none;
+  border-radius:8px; color:#0a0807; font-size:12px; font-weight:600;
+  letter-spacing:2px; text-transform:uppercase; cursor:pointer;
+  font-family:'DM Sans',sans-serif; transition:background 0.2s; margin-bottom:22px;
+  position:relative; overflow:hidden;
+}
+.btn-calc:hover { background:var(--gold-light); }
+.btn-calc::after {
+  content:''; position:absolute; top:0; left:-100%; width:60%; height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);
+  animation:shimmer 2.5s ease infinite;
+}
+@keyframes shimmer { 0%{left:-100%} 100%{left:200%} }
+
+/* ── RESULTS ── */
+.results { display:none; }
+.results.show { display:block; animation:fadeUp 0.4s ease; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+.result-name {
+  font-family:'Playfair Display',serif; font-style:italic;
+  font-size:22px; color:var(--cream); margin-bottom:4px;
+}
+.result-volume { font-size:11px; color:var(--faint); letter-spacing:1px; margin-bottom:16px; }
+
+/* METRICS GRID */
+.metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:0; margin-bottom:0; }
+.metric {
+  padding:16px 12px; text-align:center;
+  background:rgba(193,127,36,0.06); border:1px solid var(--border);
+  margin-right:-1px; margin-bottom:-1px; position:relative;
+}
+.metric:first-child { border-radius:8px 0 0 0; }
+.metric:nth-child(4) { border-radius:0 8px 0 0; margin-right:0; }
+.metric-num { font-family:'Playfair Display',serif; font-size:26px; font-weight:700; line-height:1; }
+.metric-unit { font-size:10px; color:var(--faint); margin-top:3px; letter-spacing:1px; text-transform:uppercase; }
+.metric-label { font-size:9px; color:var(--dim); margin-top:3px; }
+
+/* BREAKDOWN TABLE */
+.breakdown {
+  border:1px solid var(--border); border-top:none;
+  border-radius:0 0 8px 8px; overflow:hidden; margin-bottom:16px;
+}
+.breakdown table { min-width:0; width:100%; }
+.breakdown thead th {
+  background:rgba(255,255,255,0.02); border-bottom:1px solid var(--border);
+  padding:9px 14px;
+}
+.breakdown tbody td { padding:10px 14px; font-size:12.5px; color:var(--muted); border-bottom:1px solid rgba(193,127,36,0.06); }
+.breakdown tbody tr:last-child td { border-bottom:none; }
+.breakdown tbody tr.total td { color:var(--gold); font-weight:500; background:rgba(193,127,36,0.05); border-top:1px solid var(--border); }
+.ing-cell { color:var(--cream); }
+
+/* RECOMMENDATION BOX */
+.rec-box {
+  border:1px solid var(--border-strong); border-radius:10px;
+  padding:18px 20px; margin-bottom:16px;
+  background:rgba(193,127,36,0.05);
+}
+.rec-header {
+  font-size:9.5px; letter-spacing:2px; text-transform:uppercase;
+  color:var(--gold); margin-bottom:12px; display:flex; align-items:center; gap:8px;
+}
+.rec-header::before { content:''; width:24px; height:1.5px; background:var(--gold); display:inline-block; }
+
+.rec-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.rec-item { background:var(--dark-3); border:1px solid var(--border); border-radius:8px; padding:12px 14px; }
+.rec-item-label { font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:var(--faint); margin-bottom:4px; }
+.rec-item-value { font-family:'Playfair Display',serif; font-size:20px; font-weight:600; }
+.rec-item-sub { font-size:11px; color:var(--muted); margin-top:3px; }
+
+.margin-bar-wrap { margin-top:12px; }
+.margin-bar-label { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-bottom:6px; }
+.margin-bar-track { height:8px; background:rgba(255,255,255,0.06); border-radius:4px; overflow:hidden; }
+.margin-bar-fill { height:100%; border-radius:4px; transition:width 0.8s ease; }
+
+.advisory-box {
+  border-left:2px solid var(--gold); padding:12px 16px;
+  background:rgba(193,127,36,0.04); border-radius:0 8px 8px 0;
+  font-size:12px; color:var(--faint); line-height:1.7; margin-bottom:16px;
+}
+.advisory-box b { color:var(--cream); font-weight:500; }
+
+.btn-reset {
+  background:none; border:1px solid var(--border); border-radius:8px;
+  color:var(--faint); padding:10px 22px; font-size:11px; cursor:pointer;
+  font-family:'DM Sans',sans-serif; transition:all 0.2s; letter-spacing:1.5px; text-transform:uppercase;
+}
+.btn-reset:hover { border-color:var(--gold); color:var(--gold); }
+
+/* COLOUR CODING */
+.c-green { color:var(--green); }
+.c-gold { color:var(--gold); }
+.c-amber { color:var(--amber); }
+.c-red { color:var(--red); }
+
+@media (max-width:520px) {
+  .metrics { grid-template-columns:1fr 1fr; }
+  .metric:nth-child(4) { border-radius:0; margin-right:-1px; }
+  .metric:nth-child(2) { border-radius:0 8px 0 0; margin-right:0; }
+  .settings-grid { grid-template-columns:1fr 1fr; }
+  .rec-grid { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-icon">🧮</div>
+  <div>
+    <div class="app-name">Bar-Back — Cocktail Cost & Pricing Calculator</div>
+    <div class="app-sub">Calculate cost price, suggested sell price and gross profit margin</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="gold-rule"></div>
+
+  <!-- PRESETS -->
+  <span class="section-label">Quick Load a Classic</span>
+  <div class="presets">
+    <button class="preset" onclick="loadPreset('negroni')">🍊 Negroni</button>
+    <button class="preset" onclick="loadPreset('espresso')">☕ Espresso Martini</button>
+    <button class="preset" onclick="loadPreset('mojito')">🌿 Mojito</button>
+    <button class="preset" onclick="loadPreset('margarita')">🍋 Margarita</button>
+    <button class="preset" onclick="loadPreset('oldfashioned')">🥃 Old Fashioned</button>
+    <button class="preset" onclick="loadPreset('aperolspritz')">🍾 Aperol Spritz</button>
+    <button class="preset" onclick="loadPreset('cosmopolitan')">🍸 Cosmopolitan</button>
+    <button class="preset" onclick="loadPreset('whiskysoour')">🥃 Whisky Sour</button>
+  </div>
+
+  <!-- CURRENCY -->
+  <span class="section-label">Currency</span>
+  <div class="currency-row">
+    <button class="currency-btn active" onclick="setCurrency('AED','AED')">AED</button>
+    <button class="currency-btn" onclick="setCurrency('USD','$')">USD</button>
+    <button class="currency-btn" onclick="setCurrency('GBP','£')">GBP</button>
+    <button class="currency-btn" onclick="setCurrency('EUR','€')">EUR</button>
+    <button class="currency-btn" onclick="setCurrency('SAR','SAR')">SAR</button>
+  </div>
+
+  <!-- COCKTAIL NAME -->
+  <div class="name-wrap">
+    <label class="field-label">Cocktail Name</label>
+    <input type="text" class="name-input" id="cocktailName" placeholder="e.g. Signature Negroni, House Margarita...">
+  </div>
+
+  <!-- INGREDIENTS TABLE -->
+  <span class="section-label">Ingredients — enter cost per full bottle</span>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:30%">Ingredient</th>
+          <th class="center" style="width:14%">Bottle (ml)</th>
+          <th class="center" style="width:14%">Used (ml)</th>
+          <th class="right" style="width:18%">Bottle Cost</th>
+          <th class="right" style="width:16%">Cost/Use</th>
+          <th style="width:8%"></th>
+        </tr>
+      </thead>
+      <tbody id="ingRows"></tbody>
+    </table>
+  </div>
+  <button class="btn-add" onclick="addRow()">+ Add Ingredient</button>
+
+  <!-- OVERHEADS AND SETTINGS -->
+  <span class="section-label">Overheads and Pricing Settings</span>
+  <div class="settings-grid">
+    <div class="setting-item">
+      <label class="field-label">Overhead Cost per Drink</label>
+      <input type="number" class="setting-input" id="overhead" value="1.50" min="0" step="0.10" placeholder="1.50">
+    </div>
+    <div class="setting-item">
+      <label class="field-label">Target Food Cost %</label>
+      <input type="number" class="setting-input" id="targetCost" value="22" min="5" max="60" step="1" placeholder="22">
+    </div>
+    <div class="setting-item">
+      <label class="field-label">Actual Sell Price</label>
+      <input type="number" class="setting-input" id="actualPrice" value="0" min="0" step="0.50" placeholder="Optional">
+    </div>
+  </div>
+
+  <!-- CALCULATE -->
+  <button class="btn-calc" onclick="calculate()">💰 &nbsp; Calculate Cost & Pricing</button>
+
+  <!-- RESULTS -->
+  <div class="results" id="results">
+    <div class="result-name" id="resName">Cocktail</div>
+    <div class="result-volume" id="resVolume"></div>
+
+    <div class="metrics" id="metricsGrid"></div>
+
+    <div class="breakdown">
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:left;width:30%">Ingredient</th>
+            <th class="center" style="width:14%">Bottle</th>
+            <th class="center" style="width:14%">Used</th>
+            <th class="right" style="width:18%">Bottle Cost</th>
+            <th class="right" style="width:18%">Cost/Use</th>
+            <th class="right" style="width:6%">%</th>
+          </tr>
+        </thead>
+        <tbody id="breakdownBody"></tbody>
+      </table>
+    </div>
+
+    <div class="rec-box">
+      <div class="rec-header">Pricing Recommendation</div>
+      <div class="rec-grid" id="recGrid"></div>
+      <div class="margin-bar-wrap" id="marginBarWrap"></div>
+    </div>
+
+    <div class="advisory-box" id="advisoryBox"></div>
+
+    <button class="btn-reset" onclick="reset()">← Calculate Another Recipe</button>
+  </div>
+</div>
+
+<script>
+let currency = { code:'AED', sym:'AED ' };
+let rowCount = 0;
+
+const PRESETS = {
+  negroni: {
+    name:'Negroni',
+    ingredients:[
+      {name:'Gin (Tanqueray 700ml)',bottleMl:700,usedMl:30,bottleCost:85},
+      {name:'Campari (700ml)',bottleMl:700,usedMl:30,bottleCost:65},
+      {name:'Sweet Vermouth (750ml)',bottleMl:750,usedMl:30,bottleCost:45}
+    ],
+    overhead:1.5,sell:55
+  },
+  espresso:{
+    name:'Espresso Martini',
+    ingredients:[
+      {name:'Vodka (Grey Goose 700ml)',bottleMl:700,usedMl:50,bottleCost:140},
+      {name:'Kahlua (700ml)',bottleMl:700,usedMl:20,bottleCost:75},
+      {name:'Sugar Syrup (1L)',bottleMl:1000,usedMl:10,bottleCost:15},
+      {name:'Fresh Espresso Shot',bottleMl:30,usedMl:30,bottleCost:3}
+    ],
+    overhead:2.5,sell:58
+  },
+  mojito:{
+    name:'Mojito',
+    ingredients:[
+      {name:'White Rum (Bacardi 700ml)',bottleMl:700,usedMl:50,bottleCost:65},
+      {name:'Fresh Lime (each)',bottleMl:1,usedMl:1,bottleCost:1.5},
+      {name:'Sugar Syrup (1L)',bottleMl:1000,usedMl:15,bottleCost:15},
+      {name:'Fresh Mint (bunch)',bottleMl:1,usedMl:1,bottleCost:2},
+      {name:'Soda Water (1L)',bottleMl:1000,usedMl:80,bottleCost:4}
+    ],
+    overhead:2,sell:48
+  },
+  margarita:{
+    name:'Margarita',
+    ingredients:[
+      {name:'Tequila (Patron 700ml)',bottleMl:700,usedMl:50,bottleCost:180},
+      {name:'Triple Sec/Cointreau (700ml)',bottleMl:700,usedMl:25,bottleCost:85},
+      {name:'Fresh Lime Juice (L)',bottleMl:1000,usedMl:25,bottleCost:18}
+    ],
+    overhead:1.5,sell:55
+  },
+  oldfashioned:{
+    name:'Old Fashioned',
+    ingredients:[
+      {name:'Bourbon (Makers Mark 700ml)',bottleMl:700,usedMl:60,bottleCost:110},
+      {name:'Sugar Syrup (1L)',bottleMl:1000,usedMl:10,bottleCost:15},
+      {name:'Angostura Bitters (200ml)',bottleMl:200,usedMl:2,bottleCost:25}
+    ],
+    overhead:1.5,sell:52
+  },
+  aperolspritz:{
+    name:'Aperol Spritz',
+    ingredients:[
+      {name:'Aperol (700ml)',bottleMl:700,usedMl:60,bottleCost:55},
+      {name:'Prosecco (750ml)',bottleMl:750,usedMl:90,bottleCost:55},
+      {name:'Soda Water (1L)',bottleMl:1000,usedMl:30,bottleCost:4}
+    ],
+    overhead:1.5,sell:48
+  },
+  cosmopolitan:{
+    name:'Cosmopolitan',
+    ingredients:[
+      {name:'Citrus Vodka (700ml)',bottleMl:700,usedMl:40,bottleCost:100},
+      {name:'Triple Sec (700ml)',bottleMl:700,usedMl:15,bottleCost:75},
+      {name:'Cranberry Juice (1L)',bottleMl:1000,usedMl:30,bottleCost:12},
+      {name:'Fresh Lime Juice (L)',bottleMl:1000,usedMl:10,bottleCost:18}
+    ],
+    overhead:1.5,sell:50
+  },
+  whiskysoour:{
+    name:'Whisky Sour',
+    ingredients:[
+      {name:'Bourbon (Makers Mark 700ml)',bottleMl:700,usedMl:50,bottleCost:110},
+      {name:'Fresh Lemon Juice (L)',bottleMl:1000,usedMl:25,bottleCost:15},
+      {name:'Sugar Syrup (1L)',bottleMl:1000,usedMl:15,bottleCost:15},
+      {name:'Egg White (each)',bottleMl:1,usedMl:1,bottleCost:1}
+    ],
+    overhead:1.5,sell:52
+  }
+};
+
+function setCurrency(code, sym) {
+  currency = { code, sym: sym + ' ' };
+  document.querySelectorAll('.currency-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.trim() === code);
+  });
+  updateAllRowCosts();
+}
+
+function addRow(ing) {
+  rowCount++;
+  const id = rowCount;
+  const tbody = document.getElementById('ingRows');
+  const tr = document.createElement('tr');
+  tr.className = 'ing-row';
+  tr.id = 'row-' + id;
+  const name = ing?.name || '';
+  const bottleMl = ing?.bottleMl || '';
+  const usedMl = ing?.usedMl || '';
+  const bottleCost = ing?.bottleCost || '';
+  tr.innerHTML = `
+    <td><input type="text" class="cell-input" placeholder="e.g. Gin, Campari..." value="${name}" oninput="updateRowCost(${id})"></td>
+    <td class="center"><input type="number" class="cell-input num" placeholder="700" min="1" value="${bottleMl}" oninput="updateRowCost(${id})"></td>
+    <td class="center"><input type="number" class="cell-input num" placeholder="30" min="0" value="${usedMl}" oninput="updateRowCost(${id})"></td>
+    <td class="right"><input type="number" class="cell-input money" placeholder="0.00" min="0" step="0.01" value="${bottleCost}" oninput="updateRowCost(${id})"></td>
+    <td class="right"><span class="row-cost" id="rc-${id}">—</span></td>
+    <td class="center"><button class="btn-del" onclick="delRow(${id})">✕</button></td>
+  `;
+  tbody.appendChild(tr);
+  if (ing) updateRowCost(id);
+}
+
+function delRow(id) {
+  const r = document.getElementById('row-' + id);
+  if (r) r.remove();
+}
+
+function updateRowCost(id) {
+  const row = document.getElementById('row-' + id);
+  if (!row) return;
+  const inputs = row.querySelectorAll('input');
+  const bottleMl = parseFloat(inputs[1].value) || 0;
+  const usedMl = parseFloat(inputs[2].value) || 0;
+  const bottleCost = parseFloat(inputs[3].value) || 0;
+  const el = document.getElementById('rc-' + id);
+  if (bottleMl > 0 && bottleCost > 0) {
+    const costPerMl = bottleCost / bottleMl;
+    const rowCost = costPerMl * usedMl;
+    el.textContent = currency.sym + rowCost.toFixed(2);
+    el.style.color = 'var(--cream)';
+  } else {
+    el.textContent = '—';
+    el.style.color = 'var(--faint)';
+  }
+}
+
+function updateAllRowCosts() {
+  for (let i = 1; i <= rowCount; i++) {
+    updateRowCost(i);
+  }
+}
+
+function clearRows() {
+  document.getElementById('ingRows').innerHTML = '';
+  rowCount = 0;
+}
+
+function loadPreset(key) {
+  const p = PRESETS[key];
+  if (!p) return;
+  clearRows();
+  document.getElementById('cocktailName').value = p.name;
+  p.ingredients.forEach(i => addRow(i));
+  document.getElementById('overhead').value = p.overhead;
+  document.getElementById('actualPrice').value = p.sell;
+  document.getElementById('results').classList.remove('show');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function calculate() {
+  const rows = document.querySelectorAll('.ing-row');
+  if (!rows.length) { alert('Please add at least one ingredient.'); return; }
+
+  const name = document.getElementById('cocktailName').value || 'My Cocktail';
+  const overhead = parseFloat(document.getElementById('overhead').value) || 0;
+  const targetPct = parseFloat(document.getElementById('targetCost').value) || 22;
+  const actualPrice = parseFloat(document.getElementById('actualPrice').value) || 0;
+
+  let totalIngCost = 0;
+  let totalMl = 0;
+  const breakdown = [];
+
+  rows.forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const ingName = inputs[0].value || 'Ingredient';
+    const bottleMl = parseFloat(inputs[1].value) || 0;
+    const usedMl = parseFloat(inputs[2].value) || 0;
+    const bottleCost = parseFloat(inputs[3].value) || 0;
+    if (bottleMl > 0) {
+      const costPerMl = bottleCost / bottleMl;
+      const rowCost = costPerMl * usedMl;
+      totalIngCost += rowCost;
+      totalMl += usedMl;
+      breakdown.push({ name:ingName, bottleMl, usedMl, bottleCost, rowCost, costPerMl });
+    }
+  });
+
+  const totalCost = totalIngCost + overhead;
+  const suggestedPrice = totalCost / (targetPct / 100);
+  const roundedSuggest = Math.ceil(suggestedPrice / 5) * 5; // round up to nearest 5
+  const actualMargin = actualPrice > 0 ? ((actualPrice - totalCost) / actualPrice) * 100 : null;
+  const suggestedMargin = ((suggestedPrice - totalCost) / suggestedPrice) * 100;
+  const actualFoodCost = actualPrice > 0 ? (totalCost / actualPrice) * 100 : null;
+  const profitPerDrink = actualPrice > 0 ? actualPrice - totalCost : suggestedPrice - totalCost;
+
+  // Render name and volume
+  document.getElementById('resName').textContent = name;
+  document.getElementById('resVolume').textContent = `Total liquid: ${Math.round(totalMl)}ml · Ingredient cost: ${currency.sym}${totalIngCost.toFixed(2)} · With overhead: ${currency.sym}${totalCost.toFixed(2)}`;
+
+  // Metrics
+  const foodCostDisplay = actualFoodCost !== null ? actualFoodCost.toFixed(1) + '%' : (targetPct + '%');
+  const foodCostClass = actualFoodCost !== null
+    ? (actualFoodCost <= targetPct ? 'c-green' : actualFoodCost <= targetPct * 1.3 ? 'c-amber' : 'c-red')
+    : 'c-gold';
+  const marginDisplay = actualMargin !== null ? actualMargin.toFixed(1) + '%' : suggestedMargin.toFixed(1) + '%';
+  const marginClass = (actualMargin || suggestedMargin) >= 75 ? 'c-green' : (actualMargin || suggestedMargin) >= 65 ? 'c-gold' : (actualMargin || suggestedMargin) >= 55 ? 'c-amber' : 'c-red';
+
+  document.getElementById('metricsGrid').innerHTML = `
+    <div class="metric">
+      <div class="metric-num c-gold">${currency.sym}${totalIngCost.toFixed(2)}</div>
+      <div class="metric-unit">Ingredient Cost</div>
+      <div class="metric-label">Before overhead</div>
+    </div>
+    <div class="metric">
+      <div class="metric-num c-amber">${currency.sym}${totalCost.toFixed(2)}</div>
+      <div class="metric-unit">Total Cost</div>
+      <div class="metric-label">With ${currency.sym}${overhead.toFixed(2)} overhead</div>
+    </div>
+    <div class="metric">
+      <div class="metric-num ${foodCostClass}">${foodCostDisplay}</div>
+      <div class="metric-unit">Food Cost %</div>
+      <div class="metric-label">Target: ${targetPct}%</div>
+    </div>
+    <div class="metric">
+      <div class="metric-num ${marginClass}">${marginDisplay}</div>
+      <div class="metric-unit">Gross Margin</div>
+      <div class="metric-label">Profit per drink</div>
+    </div>
+  `;
+
+  // Breakdown table
+  const tbody = document.getElementById('breakdownBody');
+  tbody.innerHTML = '';
+  breakdown.forEach(b => {
+    const pct = totalIngCost > 0 ? ((b.rowCost / totalIngCost) * 100).toFixed(0) : 0;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="ing-cell">${b.name}</td>
+      <td style="text-align:center">${Math.round(b.bottleMl)}ml</td>
+      <td style="text-align:center">${b.usedMl}ml</td>
+      <td style="text-align:right">${currency.sym}${b.bottleCost.toFixed(2)}</td>
+      <td style="text-align:right">${currency.sym}${b.rowCost.toFixed(2)}</td>
+      <td style="text-align:right;color:var(--faint)">${pct}%</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  if (overhead > 0) {
+    const tr2 = document.createElement('tr');
+    tr2.innerHTML = `<td class="ing-cell" style="color:var(--faint);font-style:italic">Overhead (labour, glassware, ice, garnish)</td><td></td><td></td><td></td><td style="text-align:right;color:var(--faint)">${currency.sym}${overhead.toFixed(2)}</td><td></td>`;
+    tbody.appendChild(tr2);
+  }
+  const totalRow = document.createElement('tr');
+  totalRow.className = 'total';
+  totalRow.innerHTML = `<td>TOTAL COST</td><td></td><td></td><td></td><td style="text-align:right">${currency.sym}${totalCost.toFixed(2)}</td><td></td>`;
+  tbody.appendChild(totalRow);
+
+  // Recommendation grid
+  const profitActual = actualPrice > 0 ? (actualPrice - totalCost).toFixed(2) : null;
+  const profitSuggest = (suggestedPrice - totalCost).toFixed(2);
+  const priceColorActual = actualFoodCost !== null
+    ? (actualFoodCost <= targetPct ? 'c-green' : actualFoodCost <= targetPct * 1.3 ? 'c-amber' : 'c-red')
+    : '';
+
+  document.getElementById('recGrid').innerHTML = `
+    <div class="rec-item">
+      <div class="rec-item-label">Suggested Sell Price</div>
+      <div class="rec-item-value c-gold">${currency.sym}${suggestedPrice.toFixed(2)}</div>
+      <div class="rec-item-sub">Rounded: ${currency.sym}${roundedSuggest} · At ${targetPct}% food cost</div>
+    </div>
+    <div class="rec-item">
+      <div class="rec-item-label">Profit at Suggested Price</div>
+      <div class="rec-item-value c-green">${currency.sym}${profitSuggest}</div>
+      <div class="rec-item-sub">Per cocktail sold · ${suggestedMargin.toFixed(1)}% margin</div>
+    </div>
+    ${actualPrice > 0 ? `
+    <div class="rec-item">
+      <div class="rec-item-label">Your Actual Sell Price</div>
+      <div class="rec-item-value ${priceColorActual}">${currency.sym}${actualPrice.toFixed(2)}</div>
+      <div class="rec-item-sub">Food cost: ${actualFoodCost.toFixed(1)}% · Target: ${targetPct}%</div>
+    </div>
+    <div class="rec-item">
+      <div class="rec-item-label">Profit at Actual Price</div>
+      <div class="rec-item-value ${priceColorActual}">${currency.sym}${profitActual}</div>
+      <div class="rec-item-sub">Per cocktail · ${actualMargin.toFixed(1)}% margin</div>
+    </div>` : ''}
+  `;
+
+  // Margin bar
+  const barPct = Math.min(actualMargin || suggestedMargin, 100);
+  const barColor = barPct >= 75 ? 'var(--green)' : barPct >= 65 ? 'var(--gold)' : barPct >= 55 ? 'var(--amber)' : 'var(--red)';
+  document.getElementById('marginBarWrap').innerHTML = `
+    <div class="margin-bar-label">
+      <span>Gross Margin</span>
+      <span style="color:${barColor}">${(actualMargin || suggestedMargin).toFixed(1)}%</span>
+    </div>
+    <div class="margin-bar-track">
+      <div class="margin-bar-fill" style="width:${barPct}%;background:${barColor}"></div>
+    </div>
+  `;
+
+  // Advisory
+  let advice = '';
+  const fc = actualFoodCost || (totalCost / suggestedPrice * 100);
+  if (fc < 15) {
+    advice = `<b>Excellent margin.</b> Your cost is very well controlled. Consider whether the price point is competitive for your venue tier — being priced too high can reduce volume and overall revenue.`;
+  } else if (fc <= targetPct) {
+    advice = `<b>Healthy margin.</b> Your cost is within target. At ${currency.sym}${suggestedPrice.toFixed(2)} sell price you achieve your ${targetPct}% food cost target. <b>Monthly profit projection at 50 covers per day: ${currency.sym}${(profitPerDrink * 50 * 30).toFixed(0)}</b> — or ${currency.sym}${(profitPerDrink * 50 * 30 / 4.5).toFixed(0)} per week.`;
+  } else if (fc <= targetPct * 1.3) {
+    advice = `<b>Margin under pressure.</b> Your food cost is above target. Consider reviewing your pour size, sourcing a more cost-effective base spirit, or adjusting the sell price by ${currency.sym}${(suggestedPrice - (actualPrice || suggestedPrice)).toFixed(2)} to hit your ${targetPct}% target.`;
+  } else {
+    advice = `<b>⚠️ Loss risk.</b> Your food cost significantly exceeds target. At current pricing you are not covering ingredient cost adequately. Immediate review recommended — either reprice to ${currency.sym}${suggestedPrice.toFixed(2)}, reduce pour size, or substitute ingredients.`;
+  }
+
+  // Monthly projection
+  const profitUsed = actualPrice > 0 ? (actualPrice - totalCost) : (suggestedPrice - totalCost);
+  advice += `<br><br><b>Revenue potential:</b> Selling 30 covers/day → <b>${currency.sym}${(profitUsed * 30 * 30).toFixed(0)}/month gross profit</b> from this cocktail alone.`;
+
+  document.getElementById('advisoryBox').innerHTML = advice;
+  document.getElementById('results').classList.add('show');
+  setTimeout(() => document.getElementById('results').scrollIntoView({ behavior:'smooth', block:'start' }), 100);
+}
+
+function reset() {
+  document.getElementById('results').classList.remove('show');
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+// Init with 3 blank rows
+addRow(); addRow(); addRow();
+</script>
+</body>
+</html>

@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bar-Back — ABV & Calorie Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background:#070503; min-height:100vh;
+  display:flex; flex-direction:column; align-items:center;
+  padding:20px 16px 60px; font-family:'DM Sans',sans-serif; color:#F5ECD7;
+}
+
+/* HEADER */
+.app-header {
+  width:100%; max-width:600px;
+  background:#C17F24; border-radius:14px 14px 0 0;
+  padding:16px 22px; display:flex; align-items:center; gap:12px;
+}
+.app-icon { width:38px; height:38px; border-radius:50%; background:#0a0807; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.app-name { font-size:15px; font-weight:500; color:#0a0807; }
+.app-sub { font-size:10px; color:rgba(10,8,7,0.6); margin-top:2px; }
+
+/* CARD */
+.card {
+  width:100%; max-width:600px;
+  background:#0f0c09; border:1px solid rgba(193,127,36,0.3);
+  border-top:none; border-radius:0 0 14px 14px; padding:22px 20px 30px;
+}
+
+.divider { width:40px; height:2px; background:#C17F24; margin:0 0 16px; }
+.section-title { font-size:11px; letter-spacing:2.5px; text-transform:uppercase; color:rgba(193,127,36,0.7); margin-bottom:14px; }
+
+/* COCKTAIL NAME */
+.name-row { margin-bottom:20px; }
+.label { font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#6A5A3A; display:block; margin-bottom:6px; }
+.name-input {
+  width:100%; padding:11px 14px;
+  background:rgba(193,127,36,0.06); border:1px solid rgba(193,127,36,0.25);
+  border-radius:8px; color:#F5ECD7; font-size:14px;
+  font-family:'DM Sans',sans-serif; outline:none; transition:border-color 0.2s;
+}
+.name-input:focus { border-color:#C17F24; }
+.name-input::placeholder { color:#3A2A18; }
+
+/* INGREDIENTS TABLE */
+.ingredients-table { width:100%; border-collapse:collapse; margin-bottom:14px; }
+.ingredients-table th {
+  font-size:10px; letter-spacing:2px; text-transform:uppercase;
+  color:#6A5A3A; padding:0 8px 10px; text-align:left; font-weight:400;
+}
+.ingredients-table th:nth-child(2),
+.ingredients-table th:nth-child(3) { text-align:center; }
+.ingredients-table th:last-child { text-align:right; width:36px; }
+
+.ing-row td { padding:5px 8px; vertical-align:middle; }
+.ing-row td:last-child { text-align:right; }
+
+.ing-input {
+  width:100%; padding:9px 12px;
+  background:rgba(255,255,255,0.04); border:1px solid rgba(193,127,36,0.18);
+  border-radius:6px; color:#F5ECD7; font-size:13px;
+  font-family:'DM Sans',sans-serif; outline:none; transition:border-color 0.2s;
+}
+.ing-input:focus { border-color:rgba(193,127,36,0.5); }
+.ing-input::placeholder { color:#3A2A18; }
+.ing-input.num { text-align:center; }
+
+/* Remove button */
+.btn-remove {
+  width:28px; height:28px; border-radius:50%;
+  border:1px solid rgba(193,127,36,0.2);
+  background:transparent; color:rgba(193,127,36,0.5);
+  cursor:pointer; font-size:14px; display:flex;
+  align-items:center; justify-content:center; transition:all 0.2s;
+  flex-shrink:0; margin-left:auto;
+}
+.btn-remove:hover { border-color:#993C1D; color:#ff6040; background:rgba(153,60,29,0.1); }
+
+/* ADD INGREDIENT */
+.btn-add-row {
+  width:100%; padding:10px; background:transparent;
+  border:1px dashed rgba(193,127,36,0.3); border-radius:8px;
+  color:rgba(193,127,36,0.6); font-size:12px; letter-spacing:1.5px;
+  text-transform:uppercase; cursor:pointer; font-family:'DM Sans',sans-serif;
+  transition:all 0.2s; margin-bottom:16px; display:flex;
+  align-items:center; justify-content:center; gap:8px;
+}
+.btn-add-row:hover { border-color:#C17F24; color:#C17F24; background:rgba(193,127,36,0.04); }
+
+/* GARNISH/EXTRAS */
+.extras-row { margin-bottom:20px; }
+.extras-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
+.extra-item { display:flex; align-items:center; gap:8px; }
+.extra-label { font-size:12px; color:#6A5A3A; flex-shrink:0; }
+.extra-input {
+  flex:1; padding:8px 12px;
+  background:rgba(255,255,255,0.04); border:1px solid rgba(193,127,36,0.18);
+  border-radius:6px; color:#F5ECD7; font-size:13px;
+  font-family:'DM Sans',sans-serif; outline:none; text-align:center;
+}
+.extra-input:focus { border-color:rgba(193,127,36,0.5); }
+
+/* QUICK PRESETS */
+.presets { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:20px; }
+.preset-btn {
+  padding:6px 14px; border:1px solid rgba(193,127,36,0.22);
+  border-radius:20px; background:transparent; color:rgba(193,127,36,0.6);
+  font-size:11px; cursor:pointer; font-family:'DM Sans',sans-serif;
+  transition:all 0.2s;
+}
+.preset-btn:hover { border-color:#C17F24; color:#C17F24; background:rgba(193,127,36,0.06); }
+
+/* CALCULATE BUTTON */
+.btn-calc {
+  width:100%; padding:14px; background:#C17F24; border:none;
+  border-radius:8px; color:#0a0807; font-size:12px; font-weight:500;
+  letter-spacing:2px; text-transform:uppercase; cursor:pointer;
+  font-family:'DM Sans',sans-serif; transition:background 0.2s; margin-bottom:20px;
+}
+.btn-calc:hover { background:#e8a830; }
+
+/* RESULTS */
+.results { display:none; }
+.results.show { display:block; }
+
+.result-header {
+  background:rgba(193,127,36,0.08); border:1px solid rgba(193,127,36,0.3);
+  border-radius:10px 10px 0 0; padding:16px 20px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.result-cocktail-name { font-family:'Playfair Display',serif; font-size:20px; font-style:italic; color:#F5ECD7; }
+.result-volume { font-size:11px; color:#6A5A3A; letter-spacing:1px; margin-top:3px; }
+
+.metrics-grid {
+  display:grid; grid-template-columns:1fr 1fr 1fr;
+  border:1px solid rgba(193,127,36,0.2); border-top:none; border-radius:0;
+}
+.metric {
+  padding:18px 14px; text-align:center;
+  border-right:1px solid rgba(193,127,36,0.15);
+}
+.metric:last-child { border-right:none; }
+.metric-num { font-family:'Playfair Display',serif; font-size:28px; font-weight:700; line-height:1; }
+.metric-unit { font-size:11px; color:#6A5A3A; margin-top:4px; letter-spacing:1px; text-transform:uppercase; }
+.metric-label { font-size:10px; color:#3A2A18; margin-top:3px; }
+
+/* ABV colour coding */
+.abv-low { color:#4a9b7f; }
+.abv-med { color:#C17F24; }
+.abv-high { color:#e87020; }
+.abv-very-high { color:#E24B4A; }
+
+/* CAL colour coding */
+.cal-low { color:#4a9b7f; }
+.cal-med { color:#C17F24; }
+.cal-high { color:#e87020; }
+
+.breakdown-box {
+  border:1px solid rgba(193,127,36,0.2); border-top:none;
+  border-radius:0 0 10px 10px; overflow:hidden;
+}
+.breakdown-table { width:100%; border-collapse:collapse; }
+.breakdown-table th {
+  font-size:10px; letter-spacing:2px; text-transform:uppercase;
+  color:#6A5A3A; padding:10px 14px; text-align:left;
+  background:rgba(255,255,255,0.02); font-weight:400;
+  border-bottom:1px solid rgba(193,127,36,0.1);
+}
+.breakdown-table th:not(:first-child) { text-align:right; }
+.breakdown-table td {
+  padding:10px 14px; font-size:13px; color:#9A8A6A;
+  border-bottom:1px solid rgba(193,127,36,0.06);
+}
+.breakdown-table td:not(:first-child) { text-align:right; }
+.breakdown-table tr:last-child td { border-bottom:none; }
+.breakdown-table tr.total-row td {
+  color:#C17F24; font-weight:500; background:rgba(193,127,36,0.06);
+  border-top:1px solid rgba(193,127,36,0.2); border-bottom:none;
+}
+.ing-name-cell { color:#F5ECD7; }
+
+/* ADVISORY BOX */
+.advisory {
+  margin-top:14px; padding:14px 16px;
+  background:rgba(193,127,36,0.05); border:1px solid rgba(193,127,36,0.2);
+  border-radius:8px; font-size:12px; color:#6A5A3A; line-height:1.7;
+}
+.advisory b { color:#C17F24; font-weight:500; }
+.advisory .strength-tag {
+  display:inline-block; padding:3px 10px; border-radius:20px;
+  font-size:10px; letter-spacing:1px; text-transform:uppercase;
+  margin-bottom:8px; font-weight:500;
+}
+
+.btn-reset {
+  background:none; border:1px solid rgba(193,127,36,0.25);
+  border-radius:8px; color:rgba(193,127,36,0.6);
+  padding:10px 20px; font-size:11px; cursor:pointer;
+  font-family:'DM Sans',sans-serif; margin-top:14px;
+  transition:all 0.2s; letter-spacing:1.5px; text-transform:uppercase;
+}
+.btn-reset:hover { border-color:#C17F24; color:#C17F24; }
+
+/* RESPONSIBLE NOTE */
+.responsible-note {
+  margin-top:20px; padding:14px 16px;
+  border-left:2px solid rgba(193,127,36,0.4);
+  font-size:11.5px; color:#5A4A2A; line-height:1.7;
+}
+
+@media (max-width:480px) {
+  .metrics-grid { grid-template-columns:1fr 1fr; }
+  .metric:nth-child(3) { border-right:none; grid-column:span 2; border-top:1px solid rgba(193,127,36,0.15); }
+  .extras-grid { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-icon">🧮</div>
+  <div>
+    <div class="app-name">Bar-Back — ABV & Calorie Calculator</div>
+    <div class="app-sub">Enter your recipe to get instant ABV, calories and strength rating</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="divider"></div>
+
+  <!-- QUICK PRESETS -->
+  <div class="section-title">Quick Load a Classic</div>
+  <div class="presets">
+    <button class="preset-btn" onclick="loadPreset('negroni')">🍊 Negroni</button>
+    <button class="preset-btn" onclick="loadPreset('espresso')">☕ Espresso Martini</button>
+    <button class="preset-btn" onclick="loadPreset('mojito')">🌿 Mojito</button>
+    <button class="preset-btn" onclick="loadPreset('margarita')">🍋 Margarita</button>
+    <button class="preset-btn" onclick="loadPreset('oldfashioned')">🥃 Old Fashioned</button>
+    <button class="preset-btn" onclick="loadPreset('cosmo')">🍸 Cosmopolitan</button>
+    <button class="preset-btn" onclick="loadPreset('longisland')">🧊 Long Island</button>
+    <button class="preset-btn" onclick="loadPreset('aperolspritz')">🍾 Aperol Spritz</button>
+  </div>
+
+  <!-- COCKTAIL NAME -->
+  <div class="name-row">
+    <label class="label">Cocktail Name</label>
+    <input type="text" class="name-input" id="cocktailName" placeholder="e.g. My Signature Martini">
+  </div>
+
+  <!-- INGREDIENTS -->
+  <div class="section-title">Ingredients</div>
+  <table class="ingredients-table">
+    <thead>
+      <tr>
+        <th style="width:40%">Ingredient</th>
+        <th style="width:20%">ml</th>
+        <th style="width:20%">ABV %</th>
+        <th style="width:20%">Sugar (g)</th>
+        <th style="width:40px"></th>
+      </tr>
+    </thead>
+    <tbody id="ingredientRows"></tbody>
+  </table>
+
+  <button class="btn-add-row" onclick="addRow()">+ Add Ingredient</button>
+
+  <!-- EXTRAS -->
+  <div class="extras-row">
+    <div class="section-title">Non-Alcoholic Additions (optional)</div>
+    <div class="extras-grid">
+      <div class="extra-item">
+        <label class="extra-label">Ice dilution (ml)</label>
+        <input type="number" class="extra-input" id="iceMl" placeholder="0" min="0" value="15">
+      </div>
+      <div class="extra-item">
+        <label class="extra-label">Citrus juice (ml)</label>
+        <input type="number" class="extra-input" id="citrusMl" placeholder="0" min="0" value="0">
+      </div>
+      <div class="extra-item">
+        <label class="extra-label">Sugar syrup (ml)</label>
+        <input type="number" class="extra-input" id="sugarMl" placeholder="0" min="0" value="0">
+      </div>
+      <div class="extra-item">
+        <label class="extra-label">Cream (ml)</label>
+        <input type="number" class="extra-input" id="creamMl" placeholder="0" min="0" value="0">
+      </div>
+      <div class="extra-item">
+        <label class="extra-label">Soda/Tonic (ml)</label>
+        <input type="number" class="extra-input" id="sodaMl" placeholder="0" min="0" value="0">
+      </div>
+      <div class="extra-item">
+        <label class="extra-label">Egg white (ml)</label>
+        <input type="number" class="extra-input" id="eggMl" placeholder="0" min="0" value="0">
+      </div>
+    </div>
+  </div>
+
+  <!-- CALCULATE -->
+  <button class="btn-calc" onclick="calculate()">🧮 &nbsp; Calculate ABV & Calories</button>
+
+  <!-- RESULTS -->
+  <div class="results" id="results">
+
+    <div class="result-header">
+      <div>
+        <div class="result-cocktail-name" id="res-name">Cocktail</div>
+        <div class="result-volume" id="res-volume">Total volume: —</div>
+      </div>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric">
+        <div class="metric-num" id="res-abv">—</div>
+        <div class="metric-unit">ABV %</div>
+        <div class="metric-label">Alcohol by Volume</div>
+      </div>
+      <div class="metric">
+        <div class="metric-num" id="res-units">—</div>
+        <div class="metric-unit">Units</div>
+        <div class="metric-label">Alcohol units</div>
+      </div>
+      <div class="metric">
+        <div class="metric-num" id="res-cals">—</div>
+        <div class="metric-unit">kcal</div>
+        <div class="metric-label">Estimated calories</div>
+      </div>
+    </div>
+
+    <div class="breakdown-box">
+      <table class="breakdown-table" id="breakdownTable">
+        <thead>
+          <tr>
+            <th>Ingredient</th>
+            <th>ml</th>
+            <th>ABV</th>
+            <th>Alcohol (ml)</th>
+            <th>Calories</th>
+          </tr>
+        </thead>
+        <tbody id="breakdownBody"></tbody>
+      </table>
+    </div>
+
+    <div class="advisory" id="advisory"></div>
+
+    <div class="responsible-note">
+      ⚠️ <strong style="color:#9A8A6A;">Responsible service reminder:</strong> This cocktail should be served to guests aged 21+ only. Encourage water alongside alcohol. Never serve to visibly intoxicated guests. In Dubai all alcohol service must comply with UAE licensing laws. Consume responsibly.
+    </div>
+
+    <button class="btn-reset" onclick="resetCalc()">← Calculate Another Recipe</button>
+  </div>
+
+</div>
+
+<script>
+// ALCOHOL DENSITY: 0.789g/ml
+// 1 alcohol unit = 10ml pure alcohol
+// Calories from alcohol: 7 kcal per gram = 7 × 0.789 = 5.6 kcal per ml pure alcohol
+
+const PRESETS = {
+  negroni: {
+    name: 'Negroni',
+    ingredients: [
+      { name:'Gin (Tanqueray 43.1%)', ml:30, abv:43.1, sugar:0 },
+      { name:'Campari (25%)', ml:30, abv:25, sugar:3.5 },
+      { name:'Sweet Vermouth (15%)', ml:30, abv:15, sugar:5 }
+    ],
+    ice:15, citrus:0, sugar:0, cream:0, soda:0, egg:0
+  },
+  espresso: {
+    name: 'Espresso Martini',
+    ingredients: [
+      { name:'Vodka (40%)', ml:50, abv:40, sugar:0 },
+      { name:'Kahlua (20%)', ml:20, abv:20, sugar:8 },
+      { name:'Sugar Syrup', ml:10, abv:0, sugar:8 }
+    ],
+    ice:20, citrus:0, sugar:0, cream:0, soda:0, egg:0,
+    espresso:30
+  },
+  mojito: {
+    name: 'Mojito',
+    ingredients: [
+      { name:'White Rum (40%)', ml:50, abv:40, sugar:0 }
+    ],
+    ice:20, citrus:25, sugar:15, cream:0, soda:75, egg:0
+  },
+  margarita: {
+    name: 'Margarita',
+    ingredients: [
+      { name:'Tequila Blanco (40%)', ml:50, abv:40, sugar:0 },
+      { name:'Triple Sec (40%)', ml:25, abv:40, sugar:5 }
+    ],
+    ice:20, citrus:25, sugar:0, cream:0, soda:0, egg:0
+  },
+  oldfashioned: {
+    name: 'Old Fashioned',
+    ingredients: [
+      { name:'Bourbon (43%)', ml:60, abv:43, sugar:0 }
+    ],
+    ice:15, citrus:0, sugar:5, cream:0, soda:5, egg:0
+  },
+  cosmo: {
+    name: 'Cosmopolitan',
+    ingredients: [
+      { name:'Citrus Vodka (40%)', ml:40, abv:40, sugar:0 },
+      { name:'Triple Sec (40%)', ml:15, abv:40, sugar:3 },
+      { name:'Cranberry Juice (0%)', ml:30, abv:0, sugar:4 }
+    ],
+    ice:20, citrus:10, sugar:0, cream:0, soda:0, egg:0
+  },
+  longisland: {
+    name: 'Long Island Iced Tea',
+    ingredients: [
+      { name:'Vodka (40%)', ml:15, abv:40, sugar:0 },
+      { name:'Tequila (40%)', ml:15, abv:40, sugar:0 },
+      { name:'White Rum (40%)', ml:15, abv:40, sugar:0 },
+      { name:'Gin (40%)', ml:15, abv:40, sugar:0 },
+      { name:'Triple Sec (40%)', ml:15, abv:40, sugar:4 }
+    ],
+    ice:20, citrus:25, sugar:10, cream:0, soda:30, egg:0
+  },
+  aperolspritz: {
+    name: 'Aperol Spritz',
+    ingredients: [
+      { name:'Aperol (11%)', ml:60, abv:11, sugar:7 },
+      { name:'Prosecco (11%)', ml:90, abv:11, sugar:2 }
+    ],
+    ice:20, citrus:0, sugar:0, cream:0, soda:30, egg:0
+  }
+};
+
+let rowCount = 0;
+
+function addRow(name='', ml='', abv='', sugar='') {
+  rowCount++;
+  const id = rowCount;
+  const tbody = document.getElementById('ingredientRows');
+  const tr = document.createElement('tr');
+  tr.className = 'ing-row';
+  tr.id = 'row-'+id;
+  tr.innerHTML = `
+    <td><input type="text" class="ing-input" placeholder="e.g. Gin, Rum, Kahlua..." value="${name}"></td>
+    <td><input type="number" class="ing-input num" placeholder="50" min="0" max="500" value="${ml}"></td>
+    <td><input type="number" class="ing-input num" placeholder="40" min="0" max="100" step="0.1" value="${abv}"></td>
+    <td><input type="number" class="ing-input num" placeholder="0" min="0" max="100" step="0.1" value="${sugar}"></td>
+    <td><button class="btn-remove" onclick="removeRow(${id})" title="Remove">✕</button></td>
+  `;
+  tbody.appendChild(tr);
+}
+
+function removeRow(id) {
+  const row = document.getElementById('row-'+id);
+  if (row) row.remove();
+}
+
+function clearRows() {
+  document.getElementById('ingredientRows').innerHTML = '';
+  rowCount = 0;
+}
+
+function loadPreset(key) {
+  const p = PRESETS[key];
+  if (!p) return;
+  clearRows();
+  document.getElementById('cocktailName').value = p.name;
+  p.ingredients.forEach(i => addRow(i.name, i.ml, i.abv, i.sugar));
+  document.getElementById('iceMl').value = p.ice || 0;
+  document.getElementById('citrusMl').value = p.citrus || 0;
+  document.getElementById('sugarMl').value = p.sugar || 0;
+  document.getElementById('creamMl').value = p.cream || 0;
+  document.getElementById('sodaMl').value = p.soda || 0;
+  document.getElementById('eggMl').value = p.egg || 0;
+  document.getElementById('results').classList.remove('show');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function calculate() {
+  const rows = document.querySelectorAll('.ing-row');
+  if (!rows.length) { alert('Please add at least one ingredient.'); return; }
+
+  const name = document.getElementById('cocktailName').value || 'My Cocktail';
+  const iceMl    = parseFloat(document.getElementById('iceMl').value) || 0;
+  const citrusMl = parseFloat(document.getElementById('citrusMl').value) || 0;
+  const sugarMl  = parseFloat(document.getElementById('sugarMl').value) || 0;
+  const creamMl  = parseFloat(document.getElementById('creamMl').value) || 0;
+  const sodaMl   = parseFloat(document.getElementById('sodaMl').value) || 0;
+  const eggMl    = parseFloat(document.getElementById('eggMl').value) || 0;
+
+  let totalAlcoholMl = 0;
+  let totalSpiritMl  = 0;
+  let totalCals      = 0;
+  const breakdown    = [];
+
+  rows.forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const ingName  = inputs[0].value || 'Ingredient';
+    const ml       = parseFloat(inputs[1].value) || 0;
+    const abv      = parseFloat(inputs[2].value) || 0;
+    const sugarG   = parseFloat(inputs[3].value) || 0;
+    const alcMl    = ml * (abv / 100);
+    const alcG     = alcMl * 0.789;
+    const alcCals  = alcG * 7;
+    const sugCals  = sugarG * 4;
+    const rowCals  = alcCals + sugCals;
+    totalAlcoholMl += alcMl;
+    totalSpiritMl  += ml;
+    totalCals      += rowCals;
+    breakdown.push({ name:ingName, ml, abv, alcMl, cals:rowCals });
+  });
+
+  // Non-alcoholic extras calories
+  const citrusCals = citrusMl * 0.43;   // ~43 kcal per 100ml
+  const sugarCals  = sugarMl * 2.6;     // sugar syrup ~260kcal/100ml
+  const creamCals  = creamMl * 3.45;    // heavy cream ~345kcal/100ml
+  const sodaCals   = sodaMl * 0.4;      // ~40kcal/100ml tonic, ~0 for soda
+  const eggCals    = eggMl * 0.52;      // egg white ~52kcal/100ml
+  totalCals += citrusCals + sugarCals + creamCals + sodaCals + eggCals;
+
+  // Ice dilution reduces alcohol concentration but total alcohol stays same
+  const nonAlcVol = iceMl + citrusMl + sugarMl + creamMl + sodaMl + eggMl;
+  const totalVol  = totalSpiritMl + nonAlcVol;
+  const finalABV  = totalVol > 0 ? (totalAlcoholMl / totalVol) * 100 : 0;
+  const units     = totalAlcoholMl / 10; // 1 unit = 10ml pure alcohol
+
+  // Extra rows for non-alcoholic additions
+  if (citrusMl > 0) breakdown.push({ name:'Citrus juice', ml:citrusMl, abv:0, alcMl:0, cals:citrusCals });
+  if (sugarMl > 0)  breakdown.push({ name:'Sugar syrup', ml:sugarMl, abv:0, alcMl:0, cals:sugarCals });
+  if (creamMl > 0)  breakdown.push({ name:'Cream', ml:creamMl, abv:0, alcMl:0, cals:creamCals });
+  if (sodaMl > 0)   breakdown.push({ name:'Soda/Tonic', ml:sodaMl, abv:0, alcMl:0, cals:sodaCals });
+  if (eggMl > 0)    breakdown.push({ name:'Egg white', ml:eggMl, abv:0, alcMl:0, cals:eggCals });
+  if (iceMl > 0)    breakdown.push({ name:'Ice dilution', ml:iceMl, abv:0, alcMl:0, cals:0 });
+
+  // ABV colour class
+  let abvClass, strengthLabel, strengthColor, bgColor, advice;
+  if (finalABV < 8) {
+    abvClass='abv-low'; strengthLabel='Low Strength'; strengthColor='#4a9b7f'; bgColor='rgba(74,155,127,0.15)';
+    advice = `This is a low-strength cocktail at <b>${finalABV.toFixed(1)}% ABV</b> — comparable to a strong beer. Suitable for guests who prefer lighter serves. Contains <b>${units.toFixed(1)} alcohol units</b>.`;
+  } else if (finalABV < 18) {
+    abvClass='abv-med'; strengthLabel='Moderate Strength'; strengthColor='#C17F24'; bgColor='rgba(193,127,36,0.12)';
+    advice = `This is a moderately strong cocktail at <b>${finalABV.toFixed(1)}% ABV</b>. Contains <b>${units.toFixed(1)} alcohol units</b>. Advise guests to drink slowly and ensure they have eaten. Offer water alongside service.`;
+  } else if (finalABV < 28) {
+    abvClass='abv-high'; strengthLabel='Strong'; strengthColor='#e87020'; bgColor='rgba(232,112,32,0.12)';
+    advice = `This is a strong cocktail at <b>${finalABV.toFixed(1)}% ABV</b>. Contains <b>${units.toFixed(1)} alcohol units</b>. Always ensure guests have food available. Limit to 1-2 serves per guest. Monitor carefully.`;
+  } else {
+    abvClass='abv-very-high'; strengthLabel='Very Strong'; strengthColor='#E24B4A'; bgColor='rgba(226,75,74,0.12)';
+    advice = `⚠️ This is a very strong cocktail at <b>${finalABV.toFixed(1)}% ABV</b>. Contains <b>${units.toFixed(1)} alcohol units</b>. Approach service with extra care. This cocktail is significantly stronger than standard serves — inform guests of the strength before serving. Ensure food is available and monitor closely.`;
+  }
+
+  // Calorie class
+  let calClass;
+  if (Math.round(totalCals) < 150) calClass='cal-low';
+  else if (Math.round(totalCals) < 300) calClass='cal-med';
+  else calClass='cal-high';
+
+  // Render results
+  document.getElementById('res-name').textContent = name;
+  document.getElementById('res-volume').textContent = `Total volume: ${Math.round(totalVol)}ml`;
+
+  const abvEl = document.getElementById('res-abv');
+  abvEl.textContent = finalABV.toFixed(1) + '%';
+  abvEl.className = 'metric-num ' + abvClass;
+
+  document.getElementById('res-units').textContent = units.toFixed(1);
+  const calEl = document.getElementById('res-cals');
+  calEl.textContent = Math.round(totalCals);
+  calEl.className = 'metric-num ' + calClass;
+
+  // Breakdown table
+  const tbody = document.getElementById('breakdownBody');
+  tbody.innerHTML = '';
+  breakdown.forEach(b => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="ing-name-cell">${b.name}</td>
+      <td>${Math.round(b.ml)}</td>
+      <td>${b.abv > 0 ? b.abv.toFixed(1)+'%' : '—'}</td>
+      <td>${b.alcMl > 0 ? b.alcMl.toFixed(1)+'ml' : '—'}</td>
+      <td>${Math.round(b.cals)} kcal</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Totals row
+  const totalRow = document.createElement('tr');
+  totalRow.className = 'total-row';
+  totalRow.innerHTML = `
+    <td>TOTAL</td>
+    <td>${Math.round(totalVol)}ml</td>
+    <td>${finalABV.toFixed(1)}%</td>
+    <td>${totalAlcoholMl.toFixed(1)}ml</td>
+    <td>${Math.round(totalCals)} kcal</td>
+  `;
+  tbody.appendChild(totalRow);
+
+  // Advisory
+  document.getElementById('advisory').innerHTML = `
+    <span class="strength-tag" style="background:${bgColor};color:${strengthColor};">${strengthLabel}</span><br>
+    ${advice}
+    <br><br>
+    <b>Calorie context:</b> ${Math.round(totalCals) < 150 ? 'Low calorie — good option for health-conscious guests.' : Math.round(totalCals) < 250 ? 'Moderate calorie content.' : Math.round(totalCals) < 400 ? 'Higher calorie — advise guests who are counting calories.' : 'Very high calorie content. Equivalent to a light meal.'}
+    Equivalent to approximately <b>${(Math.round(totalCals) / 70).toFixed(1)} km</b> of walking to burn off.
+  `;
+
+  document.getElementById('results').classList.add('show');
+  setTimeout(() => document.getElementById('results').scrollIntoView({ behavior:'smooth', block:'start' }), 100);
+}
+
+function resetCalc() {
+  document.getElementById('results').classList.remove('show');
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+// Init with 3 blank rows
+addRow(); addRow(); addRow();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,7 @@
+/scanner    /scanner.html    200
+/calculator /calculator.html 200
+/cost       /cost.html       200
+/quiz       /quiz.html       200
+/create     /create.html     200
+/events     /events.html     200
+/demo       /demo.html       200

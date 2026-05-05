@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bar-Back — Event Drinks Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gold:#C17F24;--gold-light:#E8A830;--gold-dim:rgba(193,127,36,0.2);
+  --dark:#070503;--dark-2:#0f0c09;--dark-3:#161208;
+  --cream:#F5ECD7;--muted:#9A8A6A;--faint:#6A5A3A;--dim:#3A2A18;
+  --border:rgba(193,127,36,0.22);--border-s:rgba(193,127,36,0.5);
+  --green:#4a9b7f;--red:#c05050;--amber:#e87020;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--dark);min-height:100vh;font-family:'DM Sans',sans-serif;color:var(--cream);display:flex;flex-direction:column;align-items:center;padding:20px 16px 60px;}
+
+.app-header{width:100%;max-width:680px;background:var(--gold);border-radius:14px 14px 0 0;padding:16px 22px;display:flex;align-items:center;gap:12px;}
+.app-icon{width:38px;height:38px;border-radius:50%;background:#0a0807;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.app-name{font-size:15px;font-weight:500;color:#0a0807;}
+.app-sub{font-size:10px;color:rgba(10,8,7,0.6);margin-top:2px;}
+
+.card{width:100%;max-width:680px;background:var(--dark-2);border:1px solid var(--border);border-top:none;border-radius:0 0 14px 14px;padding:24px 22px 32px;}
+.gold-rule{width:40px;height:2px;background:var(--gold);margin:0 0 16px;}
+.section-label{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--faint);display:block;margin-bottom:12px;}
+
+/* FORM GRID */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+.form-item{display:flex;flex-direction:column;gap:6px;}
+.form-item.full{grid-column:span 2;}
+.field-label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--faint);}
+.field-input,.field-select{
+  padding:10px 14px;background:rgba(193,127,36,0.04);
+  border:1px solid var(--border);border-radius:8px;color:var(--cream);
+  font-size:13px;font-family:'DM Sans',sans-serif;outline:none;
+  transition:border-color 0.2s;
+}
+.field-input:focus,.field-select:focus{border-color:var(--gold);}
+.field-input::placeholder{color:var(--dim);}
+.field-select option{background:var(--dark-3);color:var(--cream);}
+
+/* CHIPS */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px;}
+.chip{
+  padding:7px 14px;border:1px solid var(--border);border-radius:20px;
+  background:transparent;color:var(--faint);font-size:11.5px;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all 0.2s;
+}
+.chip:hover{border-color:var(--gold);color:var(--gold);background:rgba(193,127,36,0.05);}
+.chip.selected{border-color:var(--gold);background:rgba(193,127,36,0.12);color:var(--gold);}
+.chip.multi.selected{border-color:var(--gold);background:rgba(193,127,36,0.1);color:var(--gold);}
+
+/* CURRENCY */
+.currency-row{display:flex;gap:6px;margin-bottom:20px;}
+.currency-btn{padding:6px 14px;border:1px solid var(--border);border-radius:20px;background:transparent;color:var(--faint);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;}
+.currency-btn.active{background:rgba(193,127,36,0.12);border-color:var(--gold);color:var(--gold);}
+
+/* GENERATE BUTTON */
+.btn-plan{
+  width:100%;padding:14px;background:var(--gold);border:none;border-radius:8px;
+  color:#0a0807;font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase;
+  cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.2s;
+  position:relative;overflow:hidden;margin-bottom:22px;
+}
+.btn-plan:hover{background:var(--gold-light);}
+.btn-plan::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);animation:shimmer 2.5s ease infinite;}
+@keyframes shimmer{0%{left:-100%}100%{left:200%}}
+
+/* LOADING */
+.loading-box{text-align:center;padding:40px 0;display:none;}
+.dots{display:flex;gap:7px;justify-content:center;margin-bottom:14px;}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--gold);animation:dp 1.2s ease-in-out infinite;}
+.dot:nth-child(2){animation-delay:0.2s;}
+.dot:nth-child(3){animation-delay:0.4s;}
+@keyframes dp{0%,80%,100%{transform:scale(0.5);opacity:0.3}40%{transform:scale(1.2);opacity:1}}
+.loading-msg{font-size:13px;color:var(--faint);}
+
+/* RESULT */
+.result{display:none;}
+.result.show{display:block;animation:fadeUp 0.5s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+/* PLAN SECTIONS */
+.plan-header{
+  background:rgba(193,127,36,0.08);border:1px solid var(--border-s);
+  border-radius:10px 10px 0 0;padding:18px 20px;border-bottom:none;
+}
+.plan-event-name{font-family:'Playfair Display',serif;font-size:22px;font-style:italic;color:var(--cream);}
+.plan-meta{font-size:11px;color:var(--muted);margin-top:4px;}
+
+.plan-section{border:1px solid var(--border);border-top:none;padding:18px 20px;}
+.plan-section:last-child{border-radius:0 0 10px 10px;}
+.ps-title{
+  font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);
+  margin-bottom:14px;display:flex;align-items:center;gap:8px;
+}
+.ps-title::before{content:'';width:20px;height:1px;background:var(--gold);display:inline-block;}
+
+/* QUANTITIES TABLE */
+.qty-table{width:100%;border-collapse:collapse;margin-bottom:8px;}
+.qty-table th{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--faint);padding:0 0 8px;text-align:left;font-weight:400;}
+.qty-table th:not(:first-child){text-align:right;}
+.qty-table td{padding:8px 0;border-bottom:1px solid rgba(193,127,36,0.06);font-size:13px;color:var(--muted);}
+.qty-table td:not(:first-child){text-align:right;}
+.qty-table tr:last-child td{border-bottom:none;}
+.qty-table td.name{color:var(--cream);}
+.qty-table td.total-cost{color:var(--gold);font-weight:500;}
+.qty-table tr.total-row td{color:var(--gold);font-weight:500;border-top:1px solid var(--border);border-bottom:none;padding-top:10px;}
+
+/* COCKTAIL MENU */
+.cocktail-item{padding:12px 14px;background:rgba(255,255,255,0.03);border:1px solid rgba(193,127,36,0.1);border-radius:8px;margin-bottom:8px;}
+.ci-name{font-family:'Playfair Display',serif;font-size:15px;color:var(--cream);margin-bottom:3px;}
+.ci-recipe{font-size:12px;color:var(--faint);line-height:1.6;}
+
+/* CHECKLIST */
+.checklist{display:flex;flex-direction:column;gap:6px;}
+.check-item{display:flex;align-items:flex-start;gap:10px;font-size:12.5px;color:var(--muted);padding:6px 0;border-bottom:1px solid rgba(193,127,36,0.05);}
+.check-item:last-child{border-bottom:none;}
+.check-box{width:18px;height:18px;border-radius:3px;border:1px solid var(--border);flex-shrink:0;margin-top:1px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;}
+.check-box.checked{background:rgba(74,155,127,0.2);border-color:var(--green);color:var(--green);}
+
+.summary-box{
+  padding:14px 16px;border-left:2px solid var(--gold);background:rgba(193,127,36,0.04);
+  border-radius:0 8px 8px 0;font-size:12.5px;color:var(--faint);line-height:1.7;margin-bottom:16px;
+}
+.summary-box b{color:var(--cream);font-weight:500;}
+
+.action-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
+.btn-copy,.btn-again{flex:1;padding:12px;border-radius:8px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;border:1px solid;}
+.btn-copy{background:var(--gold);border-color:var(--gold);color:#0a0807;}
+.btn-copy:hover{background:var(--gold-light);}
+.btn-again{background:transparent;border-color:var(--border);color:var(--faint);}
+.btn-again:hover{border-color:var(--gold);color:var(--gold);}
+
+@media(max-width:520px){
+  .form-grid{grid-template-columns:1fr;}
+  .form-item.full{grid-column:span 1;}
+}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-icon">📋</div>
+  <div>
+    <div class="app-name">Bar-Back — Event Drinks Planner</div>
+    <div class="app-sub">Complete drinks planning for events, brunches and banqueting</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="gold-rule"></div>
+
+  <!-- CURRENCY -->
+  <span class="section-label">Currency</span>
+  <div class="currency-row">
+    <button class="currency-btn active" onclick="setCurrency('AED','AED ')">AED</button>
+    <button class="currency-btn" onclick="setCurrency('USD','$')">USD</button>
+    <button class="currency-btn" onclick="setCurrency('GBP','£')">GBP</button>
+    <button class="currency-btn" onclick="setCurrency('EUR','€')">EUR</button>
+  </div>
+
+  <!-- EVENT DETAILS -->
+  <span class="section-label">Event Details</span>
+  <div class="form-grid">
+    <div class="form-item">
+      <label class="field-label">Event Name</label>
+      <input type="text" class="field-input" id="eventName" placeholder="e.g. Gala Dinner, Wedding Reception...">
+    </div>
+    <div class="form-item">
+      <label class="field-label">Number of Guests</label>
+      <input type="number" class="field-input" id="guestCount" placeholder="100" min="1">
+    </div>
+    <div class="form-item">
+      <label class="field-label">Duration (hours)</label>
+      <input type="number" class="field-input" id="duration" placeholder="4" min="1" max="24" step="0.5">
+    </div>
+    <div class="form-item">
+      <label class="field-label">Budget Per Head</label>
+      <input type="number" class="field-input" id="budgetPerHead" placeholder="150" min="0">
+    </div>
+    <div class="form-item full">
+      <label class="field-label">Event Type</label>
+      <select class="field-select" id="eventType">
+        <option value="">Select event type...</option>
+        <option>Gala Dinner</option>
+        <option>Wedding Reception</option>
+        <option>Corporate Cocktail Party</option>
+        <option>Brunch</option>
+        <option>NYE Celebration</option>
+        <option>Birthday Party</option>
+        <option>Product Launch</option>
+        <option>Iftar Dinner</option>
+        <option>Pool Party</option>
+        <option>Incentive Group Dinner</option>
+        <option>Awards Ceremony</option>
+        <option>Private Dining</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- DRINKING PROFILE -->
+  <span class="section-label">Guest Drinking Profile</span>
+  <div class="chips" id="profileChips">
+    <button class="chip" onclick="pick(this,'profile')">Predominantly Drinking — Full Bar</button>
+    <button class="chip" onclick="pick(this,'profile')">Mixed — 50% Drinking / 50% Non-Drinking</button>
+    <button class="chip" onclick="pick(this,'profile')">Mostly Non-Drinking — Premium Mocktails</button>
+    <button class="chip" onclick="pick(this,'profile')">Ramadan — No Alcohol</button>
+    <button class="chip" onclick="pick(this,'profile')">International Corporate — Mixed</button>
+  </div>
+
+  <!-- INCLUSIONS -->
+  <span class="section-label">Include in Plan (select all that apply)</span>
+  <div class="chips" id="includeChips">
+    <button class="chip multi selected" onclick="toggleMulti(this)">🥂 Welcome Drinks</button>
+    <button class="chip multi selected" onclick="toggleMulti(this)">🍷 Wine with Dinner</button>
+    <button class="chip multi selected" onclick="toggleMulti(this)">🍸 Cocktail Bar</button>
+    <button class="chip multi selected" onclick="toggleMulti(this)">🍺 Beer and Soft Drinks</button>
+    <button class="chip multi selected" onclick="toggleMulti(this)">🥂 Toasting Champagne</button>
+    <button class="chip multi" onclick="toggleMulti(this)">☕ Coffee and Tea Service</button>
+    <button class="chip multi" onclick="toggleMulti(this)">🍹 Premium Mocktail Bar</button>
+    <button class="chip multi" onclick="toggleMulti(this)">🥃 Premium Spirits Bar</button>
+    <button class="chip multi" onclick="toggleMulti(this)">🫗 Batch Cocktails</button>
+  </div>
+
+  <!-- THEME -->
+  <span class="section-label">Drinks Theme (optional)</span>
+  <div class="chips" id="themeChips">
+    <button class="chip" onclick="pick(this,'theme')">Classic Luxury</button>
+    <button class="chip" onclick="pick(this,'theme')">Arabian Nights</button>
+    <button class="chip" onclick="pick(this,'theme')">Mediterranean</button>
+    <button class="chip" onclick="pick(this,'theme')">Asian Fusion</button>
+    <button class="chip" onclick="pick(this,'theme')">Tropical / Beach</button>
+    <button class="chip" onclick="pick(this,'theme')">Modern Mixology</button>
+    <button class="chip" onclick="pick(this,'theme')">Vintage Speakeasy</button>
+    <button class="chip" onclick="pick(this,'theme')">No Theme — Standard</button>
+  </div>
+
+  <!-- PLAN BUTTON -->
+  <button class="btn-plan" onclick="generatePlan()">📋 &nbsp; Generate Event Drinks Plan</button>
+
+  <!-- LOADING -->
+  <div class="loading-box" id="loadingBox">
+    <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    <div class="loading-msg" id="loadMsg">Planning your event drinks...</div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result" id="result"></div>
+</div>
+
+<script>
+let currency = { code:'AED', sym:'AED ' };
+const selections = { profile:'', theme:'' };
+let planText = '';
+const LOAD_MSGS = [
+  'Planning your event drinks...','Calculating quantities...',
+  'Designing cocktail menu...','Estimating costs...','Building your checklist...'
+];
+let loadIdx=0, loadTimer;
+
+function setCurrency(code,sym){
+  currency={code,sym};
+  document.querySelectorAll('.currency-btn').forEach(b=>b.classList.toggle('active',b.textContent.trim()===code));
+}
+function pick(btn,group){
+  btn.closest('.chips').querySelectorAll('.chip:not(.multi)').forEach(c=>c.classList.remove('selected'));
+  btn.classList.toggle('selected');
+  selections[group]=btn.classList.contains('selected')?btn.textContent.trim():'';
+}
+function toggleMulti(btn){btn.classList.toggle('selected');}
+
+function getInclusions(){
+  return Array.from(document.querySelectorAll('#includeChips .chip.selected')).map(c=>c.textContent.trim()).join(', ');
+}
+
+async function generatePlan(){
+  const eventName=document.getElementById('eventName').value||'Event';
+  const guests=parseInt(document.getElementById('guestCount').value)||100;
+  const hours=parseFloat(document.getElementById('duration').value)||4;
+  const budgetPH=parseFloat(document.getElementById('budgetPerHead').value)||150;
+  const eventType=document.getElementById('eventType').value||'Gala Dinner';
+  const profile=selections.profile||'Mixed — 50% Drinking / 50% Non-Drinking';
+  const theme=selections.theme||'Classic Luxury';
+  const inclusions=getInclusions();
+  const totalBudget=guests*budgetPH;
+
+  document.getElementById('loadingBox').style.display='block';
+  document.getElementById('result').classList.remove('show');
+  document.getElementById('result').innerHTML='';
+  loadIdx=0;
+  loadTimer=setInterval(()=>{
+    loadIdx=(loadIdx+1)%LOAD_MSGS.length;
+    document.getElementById('loadMsg').textContent=LOAD_MSGS[loadIdx];
+  },1800);
+
+  const prompt=`You are a luxury hotel banqueting and events expert in Dubai. Create a complete, professional event drinks plan.
+
+Event: ${eventName}
+Type: ${eventType}
+Guests: ${guests}
+Duration: ${hours} hours
+Budget per head: ${currency.sym}${budgetPH} (Total: ${currency.sym}${totalBudget})
+Guest Profile: ${profile}
+Theme: ${theme}
+Inclusions Required: ${inclusions}
+Currency: ${currency.code}
+
+Return ONLY a valid JSON object:
+{
+  "event_summary": "2 sentence overview of the drinks strategy for this event",
+  "quantities": [
+    {"category": "Category name", "item": "Specific product", "unit": "bottles/litres/cans", "quantity": 25, "unit_cost": 150, "total_cost": 3750, "notes": "Brief note"}
+  ],
+  "cocktail_menu": [
+    {"name": "Cocktail name", "type": "Welcome/Signature/Mocktail", "recipe": "Brief recipe with ml measurements", "batch_for_50": "How to batch for 50 guests"}
+  ],
+  "staffing": {"bartenders": 3, "ratio": "1 per X guests", "notes": "Staffing recommendation"},
+  "equipment": ["Ice requirement", "Glassware types and quantities", "Other equipment"],
+  "timeline": [{"time": "6:00 PM", "action": "Drinks action for this time slot"}],
+  "checklist": ["Pre-event task 1", "Day-of task 2"],
+  "budget_breakdown": {"total_drinks_cost": 15000, "cost_per_head": 150, "contingency_recommended": 1500},
+  "bartender_tips": "2 specific professional tips for this event type in Dubai"
+}
+
+Be specific with quantities — calculate based on standard consumption rates (1.5 drinks/person/hour for drinking events, scale for mixed/non-drinking profiles). Use realistic Dubai market pricing in ${currency.code}. Make the cocktail menu match the theme. Return ONLY the JSON.`;
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    clearInterval(loadTimer);
+    const data=await res.json();
+    const text=data.content?.map(b=>b.text||'').join('').trim();
+    const clean=text.replace(/```json|```/g,'').trim();
+    const plan=JSON.parse(clean);
+    renderPlan(plan,{eventName,guests,hours,budgetPH,totalBudget,eventType,theme});
+  }catch(e){
+    clearInterval(loadTimer);
+    document.getElementById('loadMsg').textContent='Error — please try again.';
+  }finally{
+    document.getElementById('loadingBox').style.display='none';
+  }
+}
+
+function renderPlan(p, meta){
+  const qRows=p.quantities.map(q=>`
+    <tr>
+      <td class="name">${q.item}</td>
+      <td>${q.category}</td>
+      <td>${q.quantity} ${q.unit}</td>
+      <td>${currency.sym}${q.unit_cost}</td>
+      <td class="total-cost">${currency.sym}${(q.total_cost||q.quantity*q.unit_cost).toLocaleString()}</td>
+    </tr>`).join('');
+
+  const totalCost=p.quantities.reduce((s,q)=>s+(q.total_cost||q.quantity*q.unit_cost),0);
+
+  const cocktailsHtml=p.cocktail_menu.map(c=>`
+    <div class="cocktail-item">
+      <div class="ci-name">${c.name} <span style="font-size:10px;color:var(--faint);font-style:italic;font-family:'DM Sans',sans-serif">${c.type}</span></div>
+      <div class="ci-recipe">${c.recipe}</div>
+      ${c.batch_for_50?`<div style="font-size:11px;color:var(--faint);margin-top:4px;font-style:italic">Batch for 50: ${c.batch_for_50}</div>`:''}
+    </div>`).join('');
+
+  const timelineHtml=p.timeline.map(t=>`
+    <div style="display:flex;gap:12px;padding:8px 0;border-bottom:1px solid rgba(193,127,36,0.06)">
+      <span style="font-size:12px;color:var(--gold);min-width:70px;flex-shrink:0">${t.time}</span>
+      <span style="font-size:12px;color:var(--muted)">${t.action}</span>
+    </div>`).join('');
+
+  const checklistHtml=p.checklist.map((item,i)=>`
+    <div class="check-item">
+      <div class="check-box" onclick="this.classList.toggle('checked');this.textContent=this.classList.contains('checked')?'✓':''"></div>
+      <span>${item}</span>
+    </div>`).join('');
+
+  const equipHtml=p.equipment.map(e=>`<div style="font-size:12.5px;color:var(--muted);padding:5px 0;border-bottom:1px solid rgba(193,127,36,0.05)">• ${e}</div>`).join('');
+
+  const html=`
+    <div class="plan-header">
+      <div class="plan-event-name">${meta.eventName}</div>
+      <div class="plan-meta">${meta.eventType} · ${meta.guests} guests · ${meta.hours} hours · ${meta.theme} · Budget: ${currency.sym}${meta.totalBudget.toLocaleString()}</div>
+    </div>
+
+    <div class="plan-section">
+      <div class="ps-title">Event Summary</div>
+      <div class="summary-box">${p.event_summary}<br><br>
+        <b>Staffing:</b> ${p.staffing.bartenders} bartenders recommended (${p.staffing.ratio}). ${p.staffing.notes}<br>
+        <b>Bartender's Tip:</b> ${p.bartender_tips}
+      </div>
+    </div>
+
+    <div class="plan-section">
+      <div class="ps-title">Quantities and Costs</div>
+      <div style="overflow-x:auto">
+        <table class="qty-table">
+          <thead><tr><th>Item</th><th>Category</th><th>Quantity</th><th>Unit Cost</th><th>Total</th></tr></thead>
+          <tbody>
+            ${qRows}
+            <tr class="total-row">
+              <td colspan="4">TOTAL DRINKS COST</td>
+              <td class="total-cost">${currency.sym}${totalCost.toLocaleString()}</td>
+            </tr>
+            <tr class="total-row" style="opacity:0.7">
+              <td colspan="4">+ 10% Contingency Recommended</td>
+              <td class="total-cost">${currency.sym}${Math.round(totalCost*0.1).toLocaleString()}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="font-size:11px;color:var(--faint);margin-top:8px">Cost per head: ${currency.sym}${(totalCost/meta.guests).toFixed(2)} · Budget per head: ${currency.sym}${meta.budgetPH}</div>
+    </div>
+
+    <div class="plan-section">
+      <div class="ps-title">Cocktail Menu</div>
+      ${cocktailsHtml}
+    </div>
+
+    <div class="plan-section">
+      <div class="ps-title">Event Timeline</div>
+      ${timelineHtml}
+    </div>
+
+    <div class="plan-section">
+      <div class="ps-title">Equipment Checklist</div>
+      ${equipHtml}
+    </div>
+
+    <div class="plan-section">
+      <div class="ps-title">Pre-Event Checklist</div>
+      <div class="checklist">${checklistHtml}</div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn-copy" onclick="copyPlan()" id="copyBtn">⎘ &nbsp; Copy Full Plan</button>
+      <button class="btn-again" onclick="generatePlan()">🔄 &nbsp; Regenerate</button>
+      <button class="btn-again" onclick="resetForm()">← New Event</button>
+    </div>
+  `;
+
+  planText=`EVENT DRINKS PLAN — ${meta.eventName}\n${meta.eventType} · ${meta.guests} guests · ${meta.hours} hours\n\n${p.event_summary}\n\nSTAFFING: ${p.staffing.bartenders} bartenders (${p.staffing.ratio})\n\nQUANTITIES:\n${p.quantities.map(q=>`${q.item}: ${q.quantity} ${q.unit} @ ${currency.sym}${q.unit_cost} = ${currency.sym}${q.total_cost}`).join('\n')}\n\nCOCKTAIL MENU:\n${p.cocktail_menu.map(c=>`${c.name} (${c.type}): ${c.recipe}`).join('\n')}\n\nTIMELINE:\n${p.timeline.map(t=>`${t.time}: ${t.action}`).join('\n')}\n\nCHECKLIST:\n${p.checklist.map(c=>`☐ ${c}`).join('\n')}`;
+
+  document.getElementById('result').innerHTML=html;
+  document.getElementById('result').classList.add('show');
+  setTimeout(()=>document.getElementById('result').scrollIntoView({behavior:'smooth',block:'start'}),100);
+}
+
+function copyPlan(){
+  navigator.clipboard.writeText(planText).then(()=>{
+    const btn=document.getElementById('copyBtn');
+    btn.textContent='✓  Copied!';
+    setTimeout(()=>{btn.textContent='⎘  Copy Full Plan';},2000);
+  });
+}
+
+function resetForm(){
+  document.getElementById('result').classList.remove('show');
+  document.getElementById('result').innerHTML='';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>

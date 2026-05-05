@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bar-Back — Custom Cocktail Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gold:#C17F24;--gold-light:#E8A830;--gold-dim:rgba(193,127,36,0.2);
+  --dark:#070503;--dark-2:#0f0c09;--dark-3:#161208;
+  --cream:#F5ECD7;--muted:#9A8A6A;--faint:#6A5A3A;--dim:#3A2A18;
+  --border:rgba(193,127,36,0.22);--border-s:rgba(193,127,36,0.5);
+  --green:#4a9b7f;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--dark);min-height:100vh;font-family:'DM Sans',sans-serif;color:var(--cream);display:flex;flex-direction:column;align-items:center;padding:20px 16px 60px;}
+
+.app-header{width:100%;max-width:620px;background:var(--gold);border-radius:14px 14px 0 0;padding:16px 22px;display:flex;align-items:center;gap:12px;}
+.app-icon{width:38px;height:38px;border-radius:50%;background:#0a0807;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.app-name{font-size:15px;font-weight:500;color:#0a0807;}
+.app-sub{font-size:10px;color:rgba(10,8,7,0.6);margin-top:2px;}
+
+.card{width:100%;max-width:620px;background:var(--dark-2);border:1px solid var(--border);border-top:none;border-radius:0 0 14px 14px;padding:24px 22px 32px;}
+.gold-rule{width:40px;height:2px;background:var(--gold);margin:0 0 16px;}
+.section-label{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--faint);display:block;margin-bottom:12px;}
+
+/* OPTION GROUPS */
+.option-group{margin-bottom:20px;}
+.chips{display:flex;flex-wrap:wrap;gap:7px;}
+.chip{
+  padding:8px 16px;border:1px solid var(--border);border-radius:20px;
+  background:transparent;color:var(--faint);font-size:12px;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all 0.2s;
+}
+.chip:hover{border-color:var(--gold);color:var(--gold);background:rgba(193,127,36,0.05);}
+.chip.selected{border-color:var(--gold);background:rgba(193,127,36,0.12);color:var(--gold);}
+
+/* SPECIAL NOTES */
+.notes-input{
+  width:100%;padding:11px 14px;background:rgba(193,127,36,0.04);
+  border:1px solid var(--border);border-radius:8px;color:var(--cream);
+  font-size:13px;font-family:'DM Sans',sans-serif;outline:none;
+  transition:border-color 0.2s;resize:none;margin-bottom:20px;
+  min-height:70px;
+}
+.notes-input:focus{border-color:var(--gold);}
+.notes-input::placeholder{color:var(--dim);}
+
+/* GENERATE BUTTON */
+.btn-gen{
+  width:100%;padding:14px;background:var(--gold);border:none;border-radius:8px;
+  color:#0a0807;font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase;
+  cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.2s;
+  position:relative;overflow:hidden;margin-bottom:22px;
+}
+.btn-gen:hover{background:var(--gold-light);}
+.btn-gen:disabled{background:rgba(193,127,36,0.25);color:rgba(193,127,36,0.4);cursor:not-allowed;}
+.btn-gen::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);animation:shimmer 2.5s ease infinite;}
+@keyframes shimmer{0%{left:-100%}100%{left:200%}}
+
+/* LOADING */
+.loading-box{text-align:center;padding:36px 0;display:none;}
+.dots{display:flex;gap:7px;justify-content:center;margin-bottom:14px;}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--gold);animation:dp 1.2s ease-in-out infinite;}
+.dot:nth-child(2){animation-delay:0.2s;}
+.dot:nth-child(3){animation-delay:0.4s;}
+@keyframes dp{0%,80%,100%{transform:scale(0.5);opacity:0.3}40%{transform:scale(1.2);opacity:1}}
+.loading-msg{font-size:13px;color:var(--faint);}
+
+/* RESULT */
+.result{display:none;}
+.result.show{display:block;animation:fadeUp 0.5s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+.cocktail-card{border:1px solid var(--border-s);border-radius:12px;overflow:hidden;margin-bottom:16px;}
+.cocktail-header{
+  background:rgba(193,127,36,0.1);padding:20px 22px;
+  border-bottom:1px solid var(--border);
+}
+.cocktail-name{font-family:'Playfair Display',serif;font-size:26px;font-style:italic;color:var(--cream);margin-bottom:4px;}
+.cocktail-tagline{font-size:12px;color:var(--muted);font-style:italic;}
+.cocktail-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.tag{font-size:9.5px;padding:3px 10px;border:1px solid var(--border);border-radius:20px;color:var(--faint);letter-spacing:0.5px;}
+
+.cocktail-body{padding:20px 22px;}
+.section-row{margin-bottom:18px;}
+.section-row:last-child{margin-bottom:0;}
+.row-label{
+  font-size:9px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--gold);margin-bottom:8px;display:flex;align-items:center;gap:8px;
+}
+.row-label::before{content:'';width:20px;height:1px;background:var(--gold);display:inline-block;}
+.row-text{font-size:13px;color:var(--muted);line-height:1.75;}
+.row-text b{color:var(--cream);font-weight:500;}
+
+/* INGREDIENTS LIST */
+.ing-list{display:flex;flex-direction:column;gap:4px;}
+.ing-item{display:flex;align-items:center;gap:10px;padding:7px 12px;background:rgba(255,255,255,0.03);border-radius:6px;border:1px solid rgba(193,127,36,0.08);}
+.ing-ml{font-family:'Playfair Display',serif;font-size:16px;font-weight:600;color:var(--gold);min-width:52px;}
+.ing-name{font-size:13px;color:var(--cream);}
+.ing-note{font-size:11px;color:var(--faint);margin-left:auto;}
+
+/* STEPS */
+.step-list{display:flex;flex-direction:column;gap:8px;}
+.step-item{display:flex;gap:12px;align-items:flex-start;}
+.step-num{width:24px;height:24px;border-radius:50%;background:rgba(193,127,36,0.15);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--gold);flex-shrink:0;margin-top:1px;}
+.step-text{font-size:13px;color:var(--muted);line-height:1.6;}
+
+.action-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-copy,.btn-again{
+  flex:1;padding:12px;border-radius:8px;font-size:11px;letter-spacing:1.5px;
+  text-transform:uppercase;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;border:1px solid;
+}
+.btn-copy{background:var(--gold);border-color:var(--gold);color:#0a0807;}
+.btn-copy:hover{background:var(--gold-light);}
+.btn-again{background:transparent;border-color:var(--border);color:var(--faint);}
+.btn-again:hover{border-color:var(--gold);color:var(--gold);}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-icon">✨</div>
+  <div>
+    <div class="app-name">Bar-Back — Custom Cocktail Generator</div>
+    <div class="app-sub">Create original bespoke cocktail recipes in seconds</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="gold-rule"></div>
+
+  <!-- SPIRIT BASE -->
+  <div class="option-group">
+    <span class="section-label">Base Spirit</span>
+    <div class="chips" id="spiritChips">
+      <button class="chip" onclick="pick(this,'spirit')">Gin</button>
+      <button class="chip" onclick="pick(this,'spirit')">Vodka</button>
+      <button class="chip" onclick="pick(this,'spirit')">Whisky / Bourbon</button>
+      <button class="chip" onclick="pick(this,'spirit')">Rum</button>
+      <button class="chip" onclick="pick(this,'spirit')">Tequila / Mezcal</button>
+      <button class="chip" onclick="pick(this,'spirit')">Cognac / Brandy</button>
+      <button class="chip" onclick="pick(this,'spirit')">Japanese Whisky</button>
+      <button class="chip" onclick="pick(this,'spirit')">Champagne / Sparkling</button>
+      <button class="chip" onclick="pick(this,'spirit')">No Alcohol — Mocktail</button>
+    </div>
+  </div>
+
+  <!-- FLAVOUR PROFILE -->
+  <div class="option-group">
+    <span class="section-label">Flavour Profile</span>
+    <div class="chips" id="flavourChips">
+      <button class="chip" onclick="pick(this,'flavour')">Citrus and Bright</button>
+      <button class="chip" onclick="pick(this,'flavour')">Sweet and Fruity</button>
+      <button class="chip" onclick="pick(this,'flavour')">Smoky and Earthy</button>
+      <button class="chip" onclick="pick(this,'flavour')">Floral and Delicate</button>
+      <button class="chip" onclick="pick(this,'flavour')">Rich and Indulgent</button>
+      <button class="chip" onclick="pick(this,'flavour')">Spicy and Bold</button>
+      <button class="chip" onclick="pick(this,'flavour')">Bitter and Complex</button>
+      <button class="chip" onclick="pick(this,'flavour')">Tropical and Exotic</button>
+      <button class="chip" onclick="pick(this,'flavour')">Herbal and Fresh</button>
+      <button class="chip" onclick="pick(this,'flavour')">Sour and Tangy</button>
+    </div>
+  </div>
+
+  <!-- OCCASION -->
+  <div class="option-group">
+    <span class="section-label">Occasion</span>
+    <div class="chips" id="occasionChips">
+      <button class="chip" onclick="pick(this,'occasion')">Aperitif — Before Dinner</button>
+      <button class="chip" onclick="pick(this,'occasion')">Digestif — After Dinner</button>
+      <button class="chip" onclick="pick(this,'occasion')">Brunch Cocktail</button>
+      <button class="chip" onclick="pick(this,'occasion')">Date Night — Romantic</button>
+      <button class="chip" onclick="pick(this,'occasion')">Celebration — Special Occasion</button>
+      <button class="chip" onclick="pick(this,'occasion')">Pool or Beach Serve</button>
+      <button class="chip" onclick="pick(this,'occasion')">Signature House Cocktail</button>
+      <button class="chip" onclick="pick(this,'occasion')">Iftar or Ramadan Serve</button>
+      <button class="chip" onclick="pick(this,'occasion')">Corporate Event</button>
+    </div>
+  </div>
+
+  <!-- STYLE -->
+  <div class="option-group">
+    <span class="section-label">Style</span>
+    <div class="chips" id="styleChips">
+      <button class="chip" onclick="pick(this,'style')">Short and Strong</button>
+      <button class="chip" onclick="pick(this,'style')">Long and Refreshing</button>
+      <button class="chip" onclick="pick(this,'style')">Frozen / Blended</button>
+      <button class="chip" onclick="pick(this,'style')">Sparkling</button>
+      <button class="chip" onclick="pick(this,'style')">Stirred and Spirit-Forward</button>
+      <button class="chip" onclick="pick(this,'style')">Sour — Shaken with Citrus</button>
+      <button class="chip" onclick="pick(this,'style')">Hot Cocktail</button>
+      <button class="chip" onclick="pick(this,'style')">Surprise Me</button>
+    </div>
+  </div>
+
+  <!-- SPECIAL NOTES -->
+  <span class="section-label">Special Notes (optional)</span>
+  <textarea class="notes-input" id="specialNotes" placeholder="e.g. Must use yuzu, no egg white, inspired by the desert, for a Japanese themed menu, guest allergic to nuts..."></textarea>
+
+  <!-- GENERATE -->
+  <button class="btn-gen" id="genBtn" onclick="generate()">✨ &nbsp; Generate My Cocktail</button>
+
+  <!-- LOADING -->
+  <div class="loading-box" id="loadingBox">
+    <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    <div class="loading-msg" id="loadMsg">Crafting your cocktail...</div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result" id="result">
+    <div class="cocktail-card" id="cocktailCard"></div>
+    <div class="action-row">
+      <button class="btn-copy" onclick="copyRecipe()" id="copyBtn">⎘ &nbsp; Copy Recipe</button>
+      <button class="btn-again" onclick="generate()">✨ &nbsp; Generate Another</button>
+      <button class="btn-again" onclick="resetForm()">← Start Over</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const selections = { spirit:'', flavour:'', occasion:'', style:'' };
+const LOAD_MSGS = ['Crafting your cocktail...','Selecting ingredients...','Balancing the flavours...','Naming your creation...','Finishing touches...'];
+let loadIdx = 0, loadTimer;
+let lastRecipe = '';
+
+function pick(btn, group) {
+  btn.closest('.chips').querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+  btn.classList.add('selected');
+  selections[group] = btn.textContent.trim();
+  const allSelected = selections.spirit && selections.flavour && selections.occasion && selections.style;
+  document.getElementById('genBtn').disabled = !allSelected;
+}
+
+async function generate() {
+  const notes = document.getElementById('specialNotes').value.trim();
+  document.getElementById('genBtn').disabled = true;
+  document.getElementById('result').classList.remove('show');
+  document.getElementById('loadingBox').style.display = 'block';
+  loadIdx = 0;
+  loadTimer = setInterval(() => {
+    loadIdx = (loadIdx + 1) % LOAD_MSGS.length;
+    document.getElementById('loadMsg').textContent = LOAD_MSGS[loadIdx];
+  }, 1600);
+
+  const prompt = `You are an award-winning cocktail creator for a luxury Dubai hotel bar. Create one completely original, bespoke cocktail based on these specifications:
+
+Base Spirit: ${selections.spirit}
+Flavour Profile: ${selections.flavour}
+Occasion: ${selections.occasion}
+Style: ${selections.style}
+Special Notes: ${notes || 'None'}
+
+Return ONLY a valid JSON object with these exact fields:
+{
+  "name": "Creative cocktail name",
+  "tagline": "One evocative sentence describing the cocktail",
+  "spirit": "${selections.spirit}",
+  "flavour": "${selections.flavour}",
+  "occasion": "${selections.occasion}",
+  "glass": "Glass type",
+  "abv": "Estimated ABV percentage",
+  "calories": "Estimated calories",
+  "ingredients": [{"ml": "30", "name": "Ingredient name", "note": "e.g. chilled, fresh-squeezed"}],
+  "method": ["Step 1 instruction", "Step 2 instruction"],
+  "garnish": "Garnish description",
+  "tasting_notes": "2 sentences on nose and palate",
+  "story": "2 sentences on the inspiration and concept behind this cocktail",
+  "bartender_tip": "One professional tip for making this cocktail perfectly"
+}
+
+Make it genuinely creative, balanced and achievable in a professional bar setting. Use ml measurements. Make the name memorable and elegant. Return ONLY the JSON.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    clearInterval(loadTimer);
+    const data = await res.json();
+    const text = data.content?.map(b=>b.text||'').join('').trim();
+    const clean = text.replace(/```json|```/g,'').trim();
+    const cocktail = JSON.parse(clean);
+    renderCocktail(cocktail);
+  } catch(e) {
+    clearInterval(loadTimer);
+    document.getElementById('loadMsg').textContent = 'Error — please try again.';
+  } finally {
+    document.getElementById('loadingBox').style.display = 'none';
+    document.getElementById('genBtn').disabled = false;
+  }
+}
+
+function renderCocktail(c) {
+  const card = document.getElementById('cocktailCard');
+  const ingsHtml = c.ingredients.map(i => `
+    <div class="ing-item">
+      <span class="ing-ml">${i.ml}ml</span>
+      <span class="ing-name">${i.name}</span>
+      ${i.note ? `<span class="ing-note">${i.note}</span>` : ''}
+    </div>`).join('');
+
+  const stepsHtml = c.method.map((step, i) => `
+    <div class="step-item">
+      <div class="step-num">${i+1}</div>
+      <div class="step-text">${step}</div>
+    </div>`).join('');
+
+  card.innerHTML = `
+    <div class="cocktail-header">
+      <div class="cocktail-name">${c.name}</div>
+      <div class="cocktail-tagline">${c.tagline}</div>
+      <div class="cocktail-tags">
+        <span class="tag">${c.glass}</span>
+        <span class="tag">${c.abv} ABV</span>
+        <span class="tag">${c.calories} kcal</span>
+        <span class="tag">${c.spirit}</span>
+        <span class="tag">${c.flavour}</span>
+      </div>
+    </div>
+    <div class="cocktail-body">
+      <div class="section-row">
+        <div class="row-label">Ingredients</div>
+        <div class="ing-list">${ingsHtml}</div>
+        ${c.garnish ? `<div style="margin-top:8px;font-size:12px;color:var(--faint);padding:7px 12px;background:rgba(193,127,36,0.04);border-radius:6px;border:1px dashed var(--border)">🍊 Garnish: ${c.garnish}</div>` : ''}
+      </div>
+      <div class="section-row">
+        <div class="row-label">Method</div>
+        <div class="step-list">${stepsHtml}</div>
+      </div>
+      <div class="section-row">
+        <div class="row-label">Tasting Notes</div>
+        <div class="row-text">${c.tasting_notes}</div>
+      </div>
+      <div class="section-row">
+        <div class="row-label">The Story</div>
+        <div class="row-text">${c.story}</div>
+      </div>
+      <div class="section-row">
+        <div class="row-label">Bartender's Tip</div>
+        <div class="row-text"><b>💡</b> ${c.bartender_tip}</div>
+      </div>
+    </div>`;
+
+  lastRecipe = `${c.name}\n${c.tagline}\n\nIngredients:\n${c.ingredients.map(i=>`${i.ml}ml ${i.name}${i.note?' — '+i.note:''}`).join('\n')}\nGarnish: ${c.garnish}\n\nMethod:\n${c.method.map((s,i)=>`${i+1}. ${s}`).join('\n')}\n\nGlass: ${c.glass} | ABV: ${c.abv} | Calories: ${c.calories}\n\nTasting Notes: ${c.tasting_notes}\n\nStory: ${c.story}\n\nBartender's Tip: ${c.bartender_tip}`;
+
+  document.getElementById('result').classList.add('show');
+  setTimeout(() => document.getElementById('result').scrollIntoView({ behavior:'smooth', block:'start' }), 100);
+}
+
+function copyRecipe() {
+  navigator.clipboard.writeText(lastRecipe).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => { btn.textContent = '⎘  Copy Recipe'; }, 2000);
+  });
+}
+
+function resetForm() {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+  Object.keys(selections).forEach(k => selections[k] = '');
+  document.getElementById('specialNotes').value = '';
+  document.getElementById('result').classList.remove('show');
+  document.getElementById('genBtn').disabled = true;
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+</script>
+</body>
+</html>
